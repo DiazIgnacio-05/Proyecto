@@ -37,6 +37,11 @@ spring:
         cachecontrol:
           max-age: 365d
           cache-public: true
+  servlet:
+    multipart:
+      # Fotos del celular: hasta 10 MB cada una (después se achican a unos 100-200 KB).
+      max-file-size: 10MB
+      max-request-size: 12MB
 
 server:
   compression:
@@ -50,3 +55,5 @@ vidriera:
   super-admin:
     email: ${SUPERADMIN_EMAIL:}
     password: ${SUPERADMIN_PASSWORD:}
+  imagenes:
+    directorio: ${VIDRIERA_IMAGENES_DIR:./uploads}

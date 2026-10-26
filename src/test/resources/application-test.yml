@@ -7,3 +7,5 @@ vidriera:
   super-admin:
     email: superadmin@vidriera.test
     password: clave-de-test-123
+  imagenes:
+    directorio: ${java.io.tmpdir}/vidriera-test-imagenes
