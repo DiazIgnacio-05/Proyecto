@@ -1,0 +1,9 @@
+# Perfil de tests de integración: Postgres lo levanta Testcontainers (ver TestcontainersConfiguration).
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/demo
+
+vidriera:
+  super-admin:
+    email: superadmin@vidriera.test
+    password: clave-de-test-123
