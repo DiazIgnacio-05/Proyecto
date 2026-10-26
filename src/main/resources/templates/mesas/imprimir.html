@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title th:text="|QR de mesas · ${comercio.nombre}|">QR de mesas</title>
+    <style th:inline="css">
+        :root { --color-primario: [(${comercio.apariencia.colorPrimario})]; }
+        /* Hoja para imprimir: siempre fondo blanco, aunque el navegador esté en modo oscuro. */
+        :root { color-scheme: light; }
+        body { margin: 0; font-family: system-ui, sans-serif; color: #1d1d1f; background: #fff; }
+        .instrucciones { padding: 1rem; text-align: center; }
+        .hoja { display: grid; grid-template-columns: repeat(auto-fill, minmax(7cm, 1fr)); gap: 0.5cm; padding: 0.5cm; }
+        .tarjeta {
+            border: 2px solid var(--color-primario); border-radius: 12px; padding: 0.5cm;
+            text-align: center; break-inside: avoid;
+        }
+        .tarjeta img { width: 5cm; height: 5cm; }
+        .tarjeta h2 { margin: 0.2cm 0 0; font-size: 20pt; color: var(--color-primario); }
+        .tarjeta p { margin: 0.1cm 0 0; font-size: 11pt; }
+        @media print {
+            .instrucciones { display: none; }
+            @page { margin: 1cm; }
+        }
+    </style>
+</head>
+<body>
+<div class="instrucciones">
+    <p>Imprimí esta hoja (Ctrl + P), recortá cada tarjeta y ponela en su mesa.</p>
+    <button type="button" onclick="window.print()">Imprimir</button>
+</div>
+<div class="hoja">
+    <div class="tarjeta" th:each="mesa : ${mesas}">
+        <img th:src="@{/mesas/{n}/qr.svg(n=${mesa})}" th:alt="|QR de la mesa ${mesa}|">
+        <h2 th:text="|Mesa ${mesa}|">Mesa 1</h2>
+        <p th:text="${comercio.nombre}">Comercio</p>
+        <p>Escaneá para ver el menú y pedir</p>
+    </div>
+</div>
+</body>
+</html>
