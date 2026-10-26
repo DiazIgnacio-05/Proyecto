@@ -17,8 +17,26 @@ spring:
       # Hibernate no toca el esquema; solo verifica que las entidades coincidan con las tablas.
       # El esquema lo manejan las migraciones de Flyway (src/main/resources/db/migration).
       ddl-auto: validate
+    properties:
+      hibernate:
+        # Al recorrer colecciones "lazy" (ej. variantes de cada producto), Hibernate las carga de a 50
+        # en una sola consulta en vez de una consulta por producto (el problema "N+1").
+        default_batch_fetch_size: 50
   flyway:
     locations: classpath:db/migration
+  web:
+    resources:
+      # CSS y JS con un hash del contenido en el nombre (sitio-3f2a....css): el navegador los guarda
+      # un año y, cuando cambia el archivo, cambia el nombre y se descarga la versión nueva.
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /css/**,/js/**
+      cache:
+        cachecontrol:
+          max-age: 365d
+          cache-public: true
 
 server:
   compression:
