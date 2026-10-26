@@ -20,15 +20,24 @@ public class UsuarioAutenticado implements UserDetails, CredentialsContainer {
     private final Rol rol;
     private final Long comercioId;
     private final boolean activo;
+    private final boolean bloqueado;
+    private final boolean debeCambiarPassword;
 
     public UsuarioAutenticado(Long id, String email, String passwordHash, Rol rol, Long comercioId,
-            boolean activo) {
+            boolean activo, boolean bloqueado, boolean debeCambiarPassword) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
         this.rol = rol;
         this.comercioId = comercioId;
         this.activo = activo;
+        this.bloqueado = bloqueado;
+        this.debeCambiarPassword = debeCambiarPassword;
+    }
+
+    /** Copia del usuario después de cambiar la contraseña (ya no hace falta forzar el cambio). */
+    public UsuarioAutenticado conPasswordCambiada() {
+        return new UsuarioAutenticado(id, email, null, rol, comercioId, activo, bloqueado, false);
     }
 
     public Long getId() {
@@ -42,6 +51,10 @@ public class UsuarioAutenticado implements UserDetails, CredentialsContainer {
     /** {@code null} para el super-admin. */
     public Long getComercioId() {
         return comercioId;
+    }
+
+    public boolean isDebeCambiarPassword() {
+        return debeCambiarPassword;
     }
 
     @Override
@@ -62,6 +75,12 @@ public class UsuarioAutenticado implements UserDetails, CredentialsContainer {
     @Override
     public boolean isEnabled() {
         return activo;
+    }
+
+    /** Bloqueado temporalmente por demasiados intentos fallidos (ver {@link LimitadorIntentosLogin}). */
+    @Override
+    public boolean isAccountNonLocked() {
+        return !bloqueado;
     }
 
     /** Spring Security la llama después del login para no dejar el hash en memoria de sesión. */

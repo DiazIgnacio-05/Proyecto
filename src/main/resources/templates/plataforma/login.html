@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Ingresar')}"></head>
+<body class="acceso">
+<main class="acceso__caja">
+    <h1>Ingresar al panel</h1>
+    <p class="suave">Administrá los productos, precios y horarios de tu comercio.</p>
+
+    <div th:if="${param.error}" class="aviso aviso--error" role="alert">Email o contraseña incorrectos.</div>
+    <div th:if="${param.bloqueado}" class="aviso aviso--error" role="alert">
+        Demasiados intentos fallidos. Esperá 15 minutos y probá de nuevo.
+    </div>
+    <div th:if="${param.deshabilitado}" class="aviso aviso--error" role="alert">
+        Esta cuenta no está habilitada. Comunicate con nosotros.
+    </div>
+    <div th:if="${param.salir}" class="aviso aviso--ok" role="status">Cerraste la sesión.</div>
+
+    <!--/* th:action agrega el token CSRF que exige Spring Security. */-->
+    <form th:action="@{/login}" method="post" class="formulario">
+        <label class="campo">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="username" required autofocus>
+        </label>
+        <label class="campo">
+            <span>Contraseña</span>
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="boton boton--principal boton--ancho">Ingresar</button>
+    </form>
+    <p class="suave pequeno">¿Olvidaste tu contraseña? Escribinos y te damos una nueva.</p>
+</main>
+</body>
+</html>

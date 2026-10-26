@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Super-admin')}"></head>
+<body class="acceso">
+<main class="acceso__caja">
+    <h1>Panel de super-admin</h1>
+    <p class="suave">La gestión de comercios (alta, baja y suspensión) llega en la Etapa 5.</p>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="boton boton--secundario">Salir</button>
+    </form>
+</main>
+</body>
+</html>
