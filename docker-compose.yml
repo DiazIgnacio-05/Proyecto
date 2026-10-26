@@ -1,0 +1,22 @@
+# PostgreSQL para desarrollo local. Uso: docker compose up -d
+# Lee DB_USER y DB_PASSWORD del archivo .env.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: vidriera-postgres
+    environment:
+      POSTGRES_DB: vidriera
+      POSTGRES_USER: ${DB_USER:-vidriera}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definí DB_PASSWORD en el archivo .env}
+    ports:
+      - "5432:5432"
+    volumes:
+      - vidriera-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d vidriera"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  vidriera-pgdata:
