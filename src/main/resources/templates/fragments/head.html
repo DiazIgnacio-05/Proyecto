@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<!--/* <head> del sitio público de un comercio: SEO, vista previa al compartir y colores del comercio. */-->
+<head th:fragment="head(meta, comercio)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${meta.titulo}">Comercio</title>
+    <meta name="description" th:content="${meta.descripcion}">
+    <link rel="canonical" th:href="${meta.urlCanonica}">
+    <meta name="theme-color" th:content="${comercio.apariencia.colorPrimario}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_AR">
+    <meta property="og:site_name" th:content="${comercio.nombre}">
+    <meta property="og:title" th:content="${meta.titulo}">
+    <meta property="og:description" th:content="${meta.descripcion}">
+    <meta property="og:url" th:content="${meta.urlCanonica}">
+    <meta property="og:image" th:content="${meta.urlImagen}">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" th:href="@{/css/sitio.css}">
+    <!--/* Los colores ya vienen validados (#RRGGBB), por eso se insertan sin escapar. */-->
+    <style th:inline="css">
+        :root {
+            --color-primario: [(${comercio.apariencia.colorPrimario})];
+            --color-secundario: [(${comercio.apariencia.colorSecundario})];
+            --color-sobre-primario: [(${comercio.apariencia.colorSobrePrimario})];
+            --color-sobre-secundario: [(${comercio.apariencia.colorSobreSecundario})];
+        }
+    </style>
+</head>
+</html>

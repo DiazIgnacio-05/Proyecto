@@ -3,6 +3,7 @@ package ar.com.vidriera.comercio;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
@@ -38,6 +39,11 @@ public class CalendarioAtencion {
             }
         }
         return Optional.empty();
+    }
+
+    /** Hora de cierre del turno en curso, si el comercio está abierto en este momento. */
+    public Optional<LocalTime> cierreActual(LocalDateTime ahora) {
+        return franjas.stream().filter(franja -> franja.incluye(ahora)).map(FranjaHoraria::cierre).findFirst();
     }
 
     public List<FranjaHoraria> franjasDelDia(DayOfWeek dia) {

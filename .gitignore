@@ -39,3 +39,5 @@ build/
 .mvn/jvm.config
 # Imágenes subidas en desarrollo
 /uploads/
+# Configuración local del navegador de vista previa de Claude Code
+.claude/launch.json

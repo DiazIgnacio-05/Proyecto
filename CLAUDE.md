@@ -33,7 +33,12 @@ Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8
 - `catalogo/` Categoria, Producto, Variante, ImagenProducto.
 - `usuario/` Usuario, Rol, login (UsuarioDetailsService), creación del super-admin.
 - `config/` propiedades tipadas (`vidriera.*`), seguridad, reloj.
-- `publico/` controladores del sitio público. Futuro: `admin/`, `superadmin/`, `pedido/`, `qr/`, `imagen/`.
+- `publico/` sitio público (menú del restaurante), SEO (`MetadatosPagina`) e imagen de vista previa.
+- `pedido/` pedido por WhatsApp: formulario, validación contra la base, mensaje y `NumeroWhatsApp`.
+- `qr/` QR por mesa (SVG con ZXing) y hoja para imprimir.
+- `comun/` utilidades compartidas (`FormatoPesos`, bean `@pesos` en Thymeleaf).
+- Futuro: `admin/`, `superadmin/`, `imagen/`.
+- Vistas en `templates/` (`fragments/head.html` = SEO + colores del comercio); estáticos en `static/css`, `static/js`.
 - Migraciones en `src/main/resources/db/migration`; datos demo en `db/demo/R__datos_demo.sql` (solo perfiles dev/test).
 
 ## Decisiones de arquitectura
@@ -50,9 +55,21 @@ Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8
    para tareas del super-admin.
 5. **Rubros** como enum con capacidades (`usaMesas`, `usaVariantes`, `usaBuscador`); el código pregunta por
    la capacidad, no por el rubro. **Módulos pagos** en `comercio_modulo` y `comercio.tieneModulo(...)`.
-6. Pedidos por WhatsApp sin guardarse en el MVP (carrito en el navegador, link `wa.me`).
+6. **Pedidos por WhatsApp sin guardarse** en el MVP. El carrito vive en el navegador (`carrito.js`,
+   localStorage); al confirmar se hace un POST a `/pedido` con ids y cantidades, el servidor busca nombres
+   y precios en la base (filtrada por tenant), arma el mensaje y responde 303 a `wa.me`. Nunca confiar en
+   precios que vengan del navegador. Modalidades: MESA (solo si vino por QR), RETIRO, ENVIO (si
+   `comercio.ofreceEnvio`).
+   `/pedido` está exento de CSRF a propósito: no guarda nada ni usa sesión, y un token obligaría a crear
+   sesión por visitante. Por eso el form usa `action` plano y no `th:action`.
 7. Super-admin creado al arrancar desde `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD`; nunca en migraciones.
 8. Estados: ACTIVO / SUSPENDIDO (sitio 503, panel solo lectura) / BAJA (sin acceso, datos conservados).
+9. **QR por mesa**: cada QR apunta a `/?mesa=N`. La hoja `/mesas/imprimir` es pública (noindex) hasta
+   moverla al panel en la Etapa 3.
+10. **SEO y vista previa**: `og:*` en `fragments/head.html`. Si el comercio no tiene portada, `og:image`
+    es `/vista-previa.png`, generada con Java2D (en Docker hará falta instalar fuentes, ver Etapa 6).
+11. **Rendimiento**: HTML del servidor + 1 CSS + 1 JS, sin fuentes web. CSS/JS con hash en el nombre y
+    caché de 1 año (`spring.web.resources.chain`). `default_batch_fetch_size: 50` evita el N+1.
 
 ## Convenciones
 - Código y dominio en español, sin ñ ni tildes en identificadores (`DUENO`, `Categoria`). Sin Lombok.
@@ -73,10 +90,14 @@ Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8
 - No configurar `hibernate.jdbc.time_zone`: desplaza los valores `TIME` (horarios) al leerlos.
 - Hibernate fija el tenant al abrir la sesión: cambiar `TenantContext` dentro de una transacción no tiene efecto.
 - El día de la semana se guarda como texto ('MONDAY'): ordenar en Java, no con ORDER BY.
+- Colores en CSS inline: usar `[(${...})]` (sin escapar; ya vienen validados). `[[${...}]]` escapa el `#`.
+- `[hidden]` necesita `display: none !important` en el CSS: una clase con `display` le gana al atributo.
+- `RedirectView` hacia afuera: `setExposeModelAttributes(false)` o Spring agrega el modelo como query params.
+- Páginas sin fondo explícito se ven oscuras si el navegador está en modo oscuro: fijar `background`.
 
 ## Estado por etapas
 - [x] Etapa 1: estructura, modelo multi-tenant, datos demo, tests de aislamiento y horarios.
-- [ ] Etapa 2: sitio público restaurante + QR + pedido por WhatsApp.
+- [x] Etapa 2: sitio público restaurante + QR + pedido por WhatsApp.
 - [ ] Etapa 3: panel del comercio con autenticación.
 - [ ] Etapa 4: rubros ropa y artículos.
 - [ ] Etapa 5: panel super-admin (alta, baja, suspensión).

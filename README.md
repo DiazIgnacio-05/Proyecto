@@ -6,8 +6,8 @@ Plataforma para que comercios locales tengan su sitio web: menú digital para re
 para tiendas de ropa y negocios de artículos, y pedidos por WhatsApp. Una sola aplicación atiende a
 todos los comercios (multi-tenant); cada cliente nuevo se da de alta por configuración.
 
-> Estado: **Etapa 1** (estructura, modelo de datos y datos de demostración). El sitio público, los
-> paneles y el despliegue llegan en las próximas etapas.
+> Estado: **Etapa 2**. Ya funciona el sitio público del restaurante con QR por mesa y pedido por
+> WhatsApp. Los otros rubros, los paneles y el despliegue llegan en las próximas etapas.
 
 ## Requisitos
 
@@ -35,6 +35,15 @@ Abrí en el navegador (Chrome y Firefox resuelven `*.localhost` a tu PC sin conf
 | Nogal Indumentaria | Tienda de ropa | http://nogal.localhost:8080 | nogal@vidriera.test |
 | Bazar La Alameda | Venta de artículos | http://la-alameda.localhost:8080 | alameda@vidriera.test |
 
+Qué probar en el restaurante demo (conviene usar la vista de celular del navegador, F12 → íconos de
+dispositivo):
+
+- Menú por categorías, cartel "Abierto ahora / Cerrado", horarios, mapa y contacto.
+- Armar un pedido y enviarlo: se abre WhatsApp con el mensaje escrito (productos, cantidades y total).
+- QR de mesa: http://sabores-del-valle.localhost:8080/?mesa=5 simula haber escaneado el QR de la mesa 5.
+- Hoja de QR para imprimir: http://sabores-del-valle.localhost:8080/mesas/imprimir
+- Imagen de vista previa al compartir el link: http://sabores-del-valle.localhost:8080/vista-previa.png
+
 La contraseña de los usuarios demo es `demo1234`. El super-admin se crea al primer arranque con
 `SUPERADMIN_EMAIL` y `SUPERADMIN_PASSWORD` del `.env`. Los números de WhatsApp de la demo son
 ficticios: cambialos por el tuyo antes de mostrarla a un cliente.
@@ -51,6 +60,10 @@ corriendo se marcan como omitidos (no fallan). Los más importantes:
 - `AislamientoMultiTenantTest`: un comercio nunca ve ni modifica datos de otro.
 - `DatosDemoTest`: las migraciones coinciden con las entidades y los datos demo son válidos.
 - `CalendarioAtencionTest` / `FranjaHorariaTest`: "abierto ahora", turnos cortados y cierre después de medianoche.
+- `PedidoControllerTest`: el pedido usa los precios de la base, rechaza productos sin stock o de otro
+  comercio, mesas inexistentes y envíos en comercios que no los hacen.
+- `NumeroWhatsAppTest`: normaliza "0383 15 4000001", "+54 9 383..." y otras formas al formato de WhatsApp.
+- `SitioRestauranteTest`: menú, SEO, QR por mesa y vista previa de punta a punta.
 
 ## Configuración
 
@@ -72,7 +85,10 @@ src/main/java/ar/com/vidriera/
   catalogo/   categorías, productos, variantes e imágenes
   usuario/    usuarios, roles y login
   config/     configuración y seguridad
-  publico/    sitio público
+  publico/    sitio público, SEO e imagen de vista previa
+  pedido/     pedido por WhatsApp
+  qr/         códigos QR por mesa
+  comun/      utilidades (formato de precios)
 src/main/resources/
   db/migration/   migraciones Flyway (esquema)
   db/demo/        comercios de demostración (perfiles dev y test)

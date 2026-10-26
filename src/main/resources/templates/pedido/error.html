@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title th:text="|Revisá tu pedido · ${comercio.nombre}|">Revisá tu pedido</title>
+    <link rel="stylesheet" th:href="@{/css/sitio.css}">
+</head>
+<body>
+<main class="contenedor mensaje-error">
+    <h1>No pudimos armar tu pedido</h1>
+    <p th:text="${mensaje}">Motivo</p>
+    <a class="boton boton--principal" href="/">Volver al menú</a>
+</main>
+</body>
+</html>
