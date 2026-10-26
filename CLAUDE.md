@@ -26,18 +26,22 @@ CI: `.github/workflows/tests.yml` corre `./mvnw -B test` en GitHub Actions en ca
 `mvnw` debe quedar con permiso de ejecución en git (`git update-index --chmod=+x mvnw`).
 
 Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8080 · http://la-alameda.localhost:8080
+Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alameda@vidriera.test`, clave `demo1234`).
 
 ## Estructura (package by feature, `src/main/java/ar/com/vidriera/`)
 - `tenant/` TenantContext, resolver de Hibernate, EntidadDelComercio, resolución de comercio por host.
 - `comercio/` Comercio (el tenant), Rubro, EstadoComercio, Modulo, horarios (FranjaHoraria, CalendarioAtencion).
 - `catalogo/` Categoria, Producto, Variante, ImagenProducto.
-- `usuario/` Usuario, Rol, login (UsuarioDetailsService), creación del super-admin.
+- `usuario/` Usuario, Rol, login (UsuarioDetailsService, LoginController), límite de intentos, cambio de contraseña.
+- `admin/` panel del comercio: `FiltroPanelDelComercio` (tenant desde el usuario), servicios, formularios y
+  controladores de productos, categorías, horarios, "Mi comercio", QR de mesas y cuenta.
+- `imagen/` subida de fotos: `ProcesadorImagenes` (valida y achica), `AlmacenamientoImagenes` (disco local).
+- `superadmin/` panel del super-admin (Etapa 5; hoy solo la portada).
 - `config/` propiedades tipadas (`vidriera.*`), seguridad, reloj.
 - `publico/` sitio público (menú del restaurante), SEO (`MetadatosPagina`) e imagen de vista previa.
 - `pedido/` pedido por WhatsApp: formulario, validación contra la base, mensaje y `NumeroWhatsApp`.
-- `qr/` QR por mesa (SVG con ZXing) y hoja para imprimir.
-- `comun/` utilidades compartidas (`FormatoPesos`, bean `@pesos` en Thymeleaf).
-- Futuro: `admin/`, `superadmin/`, `imagen/`.
+- `qr/` generador de QR (SVG con ZXing); la hoja para imprimir está en el panel (`/admin/mesas`).
+- `comun/` utilidades compartidas (`FormatoPesos`, bean `@pesos` en Thymeleaf; `LectorPesos` para formularios).
 - Vistas en `templates/` (`fragments/head.html` = SEO + colores del comercio); estáticos en `static/css`, `static/js`.
 - Migraciones en `src/main/resources/db/migration`; datos demo en `db/demo/R__datos_demo.sql` (solo perfiles dev/test).
 
@@ -64,12 +68,27 @@ Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8
    sesión por visitante. Por eso el form usa `action` plano y no `th:action`.
 7. Super-admin creado al arrancar desde `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD`; nunca en migraciones.
 8. Estados: ACTIVO / SUSPENDIDO (sitio 503, panel solo lectura) / BAJA (sin acceso, datos conservados).
-9. **QR por mesa**: cada QR apunta a `/?mesa=N`. La hoja `/mesas/imprimir` es pública (noindex) hasta
-   moverla al panel en la Etapa 3.
+9. **QR por mesa**: cada QR apunta a `<sitio>/?mesa=N`. La hoja está en el panel (`/admin/mesas`); como
+   el panel vive en otro host, la URL del sitio la arma `UrlsDelComercio`.
 10. **SEO y vista previa**: `og:*` en `fragments/head.html`. Si el comercio no tiene portada, `og:image`
     es `/vista-previa.png`, generada con Java2D (en Docker hará falta instalar fuentes, ver Etapa 6).
 11. **Rendimiento**: HTML del servidor + 1 CSS + 1 JS, sin fuentes web. CSS/JS con hash en el nombre y
     caché de 1 año (`spring.web.resources.chain`). `default_batch_fetch_size: 50` evita el N+1.
+12. **Panel del comercio** en `app.<dominio>/admin` (en un subdominio de comercio `/admin` y `/login`
+    dan 404). `FiltroPanelDelComercio` corre después de Spring Security: toma el `comercioId` del
+    `UsuarioAutenticado`, carga el comercio, fija `TenantContext` y aplica reglas de estado:
+    BAJA → cierra sesión; contraseña temporal → solo `/admin/cuenta`; SUSPENDIDO → GET sí, POST no.
+    Servicios del panel buscan `Comercio` siempre por `TenantContext.actual()`, nunca por un id del form.
+    Ids ajenos dan 404 (`RecursoNoEncontradoException`), igual que inexistentes.
+13. **Login propio** (`/login`, campos `email`/`password`, CSRF). Tras 5 fallos el email queda bloqueado
+    15 min (`LimitadorIntentosLogin`, en memoria). Mensajes de error que no revelan si el email existe.
+14. **Imágenes**: se aceptan JPG/PNG hasta 10 MB; se valida el encabezado antes de decodificar (máx.
+    40 MP), se aplica la orientación EXIF y se descartan metadatos (GPS). Fotos → JPEG 480 y 1200 px;
+    logo → PNG 256 px. Rutas `c<comercioId>/...` con UUID (nombres nunca reutilizados → caché de 1 año en
+    `/imagenes/**`). Los archivos viejos se borran recién después del commit (`AlConfirmar`).
+    Carpeta: `VIDRIERA_IMAGENES_DIR` (default `./uploads`); en producción será un volumen o R2.
+15. Formularios del panel: Post/Redirect/Get con mensajes flash (`ok` / `error`). Precios como texto
+    interpretado por `LectorPesos` ("12.500", "1.250,50").
 
 ## Convenciones
 - Código y dominio en español, sin ñ ni tildes en identificadores (`DUENO`, `Categoria`). Sin Lombok.
@@ -94,11 +113,18 @@ Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8
 - `[hidden]` necesita `display: none !important` en el CSS: una clase con `display` le gana al atributo.
 - `RedirectView` hacia afuera: `setExposeModelAttributes(false)` o Spring agrega el modelo como query params.
 - Páginas sin fondo explícito se ven oscuras si el navegador está en modo oscuro: fijar `background`.
+- **Borrados masivos saltean el filtro de tenant**: `deleteAllInBatch()`, `deleteAllByIdInBatch()` y
+  `@Modifying` con DELETE/UPDATE en JPQL afectan a TODOS los comercios. Borrar con
+  `repo.deleteAll(repo.findAll())` (entidad por entidad, ya filtradas).
+- Tests de integración: NO usar `@Transactional` en la clase de test (la sesión se abriría antes de fijar
+  el tenant). Para leer colecciones lazy, `PruebaDelPanel.enTransaccion(...)` fija el tenant y después
+  abre la transacción.
+- `<fieldset>` tiene ancho mínimo = contenido: poner `min-width: 0` o se desborda en celular.
 
 ## Estado por etapas
 - [x] Etapa 1: estructura, modelo multi-tenant, datos demo, tests de aislamiento y horarios.
 - [x] Etapa 2: sitio público restaurante + QR + pedido por WhatsApp.
-- [ ] Etapa 3: panel del comercio con autenticación.
+- [x] Etapa 3: panel del comercio con autenticación.
 - [ ] Etapa 4: rubros ropa y artículos.
 - [ ] Etapa 5: panel super-admin (alta, baja, suspensión).
 - [ ] Etapa 6: despliegue y guía de alta de clientes.
