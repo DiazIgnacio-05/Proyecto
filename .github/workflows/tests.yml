@@ -1,0 +1,45 @@
+# Integración continua: corre todos los tests en un servidor de GitHub en cada push y en cada
+# pull request. Si algún test falla, el commit o el PR quedan marcados en rojo.
+# Los tests de integración usan Testcontainers: los runners de Ubuntu ya traen Docker.
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+# Solo lectura del repositorio: el workflow no necesita escribir nada.
+permissions:
+  contents: read
+
+# Si llega un push nuevo a la misma rama mientras corre el anterior, se cancela el viejo.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: ./mvnw test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Instalar Java 21 (con caché de dependencias de Maven)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Correr los tests
+        run: ./mvnw -B test
+
+      - name: Guardar los reportes de tests si algo falló
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reportes-de-tests
+          path: target/surefire-reports/
+          retention-days: 7
