@@ -1,5 +1,7 @@
 # Vidriera
 
+[![Tests](https://github.com/DiazIgnacio-05/Proyecto/actions/workflows/tests.yml/badge.svg)](https://github.com/DiazIgnacio-05/Proyecto/actions/workflows/tests.yml)
+
 Plataforma para que comercios locales tengan su sitio web: menú digital para restaurantes, catálogo
 para tiendas de ropa y negocios de artículos, y pedidos por WhatsApp. Una sola aplicación atiende a
 todos los comercios (multi-tenant); cada cliente nuevo se da de alta por configuración.
