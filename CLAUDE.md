@@ -22,6 +22,9 @@ docker compose up -d                 # PostgreSQL local (lee .env)
 ./mvnw test                          # unitarios + integración (los de integración requieren Docker)
 ./mvnw -Dtest=AislamientoMultiTenantTest test   # un test puntual
 ```
+CI: `.github/workflows/tests.yml` corre `./mvnw -B test` en GitHub Actions en cada push y PR.
+`mvnw` debe quedar con permiso de ejecución en git (`git update-index --chmod=+x mvnw`).
+
 Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8080 · http://la-alameda.localhost:8080
 
 ## Estructura (package by feature, `src/main/java/ar/com/vidriera/`)
