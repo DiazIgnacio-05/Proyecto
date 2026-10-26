@@ -64,6 +64,29 @@ public class Producto extends EntidadDelComercio {
         return imagen;
     }
 
+    /** Quita la foto (se borra de la base por orphanRemoval) y renumera el orden de las demás. */
+    public Optional<ImagenProducto> quitarImagen(Long imagenId) {
+        Optional<ImagenProducto> imagen = imagenes.stream().filter(i -> i.getId().equals(imagenId)).findFirst();
+        imagen.ifPresent(i -> {
+            imagenes.remove(i);
+            for (int orden = 0; orden < imagenes.size(); orden++) {
+                imagenes.get(orden).setOrden(orden);
+            }
+        });
+        return imagen;
+    }
+
+    /** Pone la foto indicada primera (la que se ve en el listado). */
+    public void hacerPrincipal(Long imagenId) {
+        imagenes.stream().filter(i -> i.getId().equals(imagenId)).findFirst().ifPresent(principal -> {
+            imagenes.remove(principal);
+            imagenes.addFirst(principal);
+            for (int orden = 0; orden < imagenes.size(); orden++) {
+                imagenes.get(orden).setOrden(orden);
+            }
+        });
+    }
+
     public Variante agregarVariante(String talle, String color) {
         Variante variante = new Variante(this, talle, color);
         variantes.add(variante);

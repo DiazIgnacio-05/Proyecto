@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head(${form.esNuevo()} ? 'Nuevo producto' : 'Editar producto')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <a class="enlace-chico" th:href="@{/admin/productos}">← Volver a productos</a>
+    <h1 th:text="${form.esNuevo()} ? 'Nuevo producto' : ${form.nombre}">Producto</h1>
+
+    <form th:object="${form}" method="post" class="formulario"
+          th:action="${form.esNuevo()} ? @{/admin/productos} : @{/admin/productos/{id}(id=*{id})}">
+        <div th:if="${#fields.hasGlobalErrors()}" class="aviso aviso--error" role="alert">
+            <p th:each="e : ${#fields.globalErrors()}" th:text="${e}">Error</p>
+        </div>
+
+        <label class="campo">
+            <span>Nombre</span>
+            <input th:field="*{nombre}" maxlength="120" required>
+            <small class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+        </label>
+
+        <label class="campo">
+            <span>Categoría</span>
+            <select th:field="*{categoriaId}" required>
+                <option value="">Elegí una categoría</option>
+                <option th:each="c : ${categorias}" th:value="${c.id}" th:text="${c.nombre}">Categoría</option>
+            </select>
+            <small class="error" th:if="${#fields.hasErrors('categoriaId')}" th:errors="*{categoriaId}"></small>
+        </label>
+
+        <label class="campo">
+            <span>Precio (en pesos)</span>
+            <input th:field="*{precio}" inputmode="decimal" placeholder="Ej.: 12500" required>
+            <small class="ayuda">Podés escribirlo con o sin puntos: 12500 o 12.500. Centavos con coma: 1.250,50.</small>
+            <small class="error" th:if="${#fields.hasErrors('precio')}" th:errors="*{precio}"></small>
+        </label>
+
+        <label class="campo">
+            <span>Descripción (opcional)</span>
+            <textarea th:field="*{descripcion}" rows="3" maxlength="1000"
+                      placeholder="Ingredientes, tamaño, material..."></textarea>
+            <small class="error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></small>
+        </label>
+
+        <label class="opcion">
+            <input type="checkbox" th:field="*{disponible}">
+            <span>Disponible <small class="suave">(si lo destildás, se muestra como "Sin stock")</small></span>
+        </label>
+        <label class="opcion">
+            <input type="checkbox" th:field="*{destacado}">
+            <span>Recomendado <small class="suave">(muestra una etiqueta destacada)</small></span>
+        </label>
+
+        <label class="campo campo--corto">
+            <span>Orden</span>
+            <input type="number" th:field="*{orden}" min="0" max="9999">
+            <small class="ayuda">Los números más chicos aparecen primero dentro de la categoría.</small>
+        </label>
+
+        <button type="submit" class="boton boton--principal">Guardar</button>
+    </form>
+
+    <section th:unless="${form.esNuevo()}" id="fotos" class="bloque">
+        <h2>Fotos <small class="suave" th:text="|(${fotos.size()} de ${fotosMaximas})|">(0 de 5)</small></h2>
+        <p class="suave">La primera es la que se ve en el menú. Se achican automáticamente para que carguen rápido.</p>
+        <ul class="fotos">
+            <li th:each="foto, i : ${fotos}" class="foto">
+                <img th:src="${foto.url}" alt="" width="160" height="160" loading="lazy">
+                <span th:if="${i.first}" class="etiqueta">Principal</span>
+                <div class="foto__acciones">
+                    <form th:unless="${i.first}" method="post"
+                          th:action="@{/admin/productos/{id}/fotos/{f}/principal(id=${form.id},f=${foto.id})}">
+                        <button type="submit" class="boton boton--chico boton--secundario">Hacer principal</button>
+                    </form>
+                    <form method="post" th:action="@{/admin/productos/{id}/fotos/{f}/eliminar(id=${form.id},f=${foto.id})}"
+                          onsubmit="return confirm('¿Eliminar esta foto?')">
+                        <button type="submit" class="boton boton--chico boton--peligro">Eliminar</button>
+                    </form>
+                </div>
+            </li>
+        </ul>
+        <form th:if="${fotos.size() < fotosMaximas}" method="post" enctype="multipart/form-data"
+              th:action="@{/admin/productos/{id}/fotos(id=${form.id})}" class="formulario formulario--linea">
+            <input type="file" name="foto" accept="image/jpeg,image/png" required>
+            <button type="submit" class="boton boton--secundario">Subir foto</button>
+        </form>
+    </section>
+
+    <section th:unless="${form.esNuevo()}" class="bloque bloque--peligro">
+        <h2>Eliminar producto</h2>
+        <p class="suave">Si solo no lo tenés por ahora, mejor marcalo "sin stock".</p>
+        <form method="post" th:action="@{/admin/productos/{id}/eliminar(id=${form.id})}"
+              onsubmit="return confirm('¿Eliminar este producto? No se puede deshacer.')">
+            <button type="submit" class="boton boton--peligro">Eliminar producto</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Inicio')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <div th:if="${param.soloLectura}" class="aviso aviso--alerta" role="alert">
+        No se guardaron los cambios porque el sitio está suspendido.
+    </div>
+
+    <h1>¡Hola!</h1>
+    <p class="suave">Desde acá manejás lo que se ve en tu sitio. Los cambios se publican al instante.</p>
+
+    <div class="tarjetas">
+        <a class="tarjeta" th:href="@{/admin/productos}">
+            <span class="tarjeta__numero" th:text="${resumen.productos}">0</span>
+            <span>productos</span>
+        </a>
+        <a class="tarjeta" th:href="@{/admin/productos}">
+            <span class="tarjeta__numero" th:text="${resumen.sinStock}">0</span>
+            <span>sin stock</span>
+        </a>
+        <a class="tarjeta" th:href="@{/admin/categorias}">
+            <span class="tarjeta__numero" th:text="${resumen.categorias}">0</span>
+            <span>categorías</span>
+        </a>
+    </div>
+
+    <h2>Accesos rápidos</h2>
+    <div class="acciones">
+        <a class="boton boton--principal" th:href="@{/admin/productos/nuevo}">+ Agregar producto</a>
+        <a class="boton boton--secundario" th:href="@{/admin/horarios}">Cambiar horarios</a>
+        <a class="boton boton--secundario" th:href="@{/admin/comercio}">Datos y WhatsApp</a>
+        <a class="boton boton--secundario" th:if="${urlSitio}" th:href="${urlSitio}" target="_blank" rel="noopener">Ver mi sitio ↗</a>
+    </div>
+</main>
+</body>
+</html>

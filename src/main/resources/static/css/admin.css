@@ -1,0 +1,201 @@
+/*
+ * Estilos del panel del comercio y del login. Mobile-first: la mayoría de los dueños lo van a usar
+ * desde el celular. Colores neutros (no los del comercio) para que se distinga del sitio público.
+ */
+:root {
+    --primario: #1F6F5C;
+    --primario-oscuro: #17574A;
+    --texto: #1D1D1F;
+    --suave: #5F6368;
+    --fondo: #F4F4F1;
+    --superficie: #FFFFFF;
+    --borde: #DDDAD2;
+    --ok: #1E7B3A;
+    --ok-fondo: #E6F4EA;
+    --error: #A33A2B;
+    --error-fondo: #FBE9E7;
+    --alerta-fondo: #FFF4D6;
+    --radio: 10px;
+    color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+    color: var(--texto);
+    background: var(--fondo);
+}
+
+h1 { font-size: 1.5rem; margin: 0.5rem 0; }
+h2 { font-size: 1.15rem; margin: 0 0 0.5rem; }
+h3 { font-size: 1rem; margin: 0 0 0.5rem; }
+a { color: var(--primario); }
+.suave { color: var(--suave); }
+.pequeno { font-size: 0.85rem; }
+
+/* Menú ------------------------------------------------------------------------------------------ */
+.menu { background: var(--superficie); border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 2; }
+.menu__barra {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    max-width: 60rem; margin: 0 auto; padding: 0.625rem 1rem 0.25rem;
+}
+.menu__comercio { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; align-items: baseline; }
+.menu__comercio a { font-size: 0.9rem; }
+.menu__nav {
+    display: flex; gap: 0.25rem; overflow-x: auto; max-width: 60rem; margin: 0 auto;
+    padding: 0 0.75rem 0.5rem; scrollbar-width: none;
+}
+.menu__nav::-webkit-scrollbar { display: none; }
+.menu__nav a {
+    flex: none; padding: 0.4rem 0.75rem; border-radius: 999px;
+    color: var(--texto); text-decoration: none; font-size: 0.95rem; white-space: nowrap;
+}
+.menu__nav a.activo { background: var(--primario); color: #FFFFFF; }
+
+.contenido { max-width: 60rem; margin: 0 auto; padding: 1rem 1rem 3rem; }
+
+/* Mensajes --------------------------------------------------------------------------------------- */
+.aviso { margin: 0 0 1rem; padding: 0.75rem 1rem; border-radius: var(--radio); }
+.aviso p { margin: 0.125rem 0; }
+.aviso--ok { background: var(--ok-fondo); color: var(--ok); }
+.aviso--error { background: var(--error-fondo); color: var(--error); }
+.aviso--alerta { background: var(--alerta-fondo); }
+
+/* Botones ---------------------------------------------------------------------------------------- */
+.boton {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0.5rem 1rem; border-radius: var(--radio);
+    border: 1px solid transparent; font: inherit; font-weight: 600;
+    text-decoration: none; cursor: pointer; background: none;
+}
+.boton--principal { background: var(--primario); color: #FFFFFF; }
+.boton--principal:hover { background: var(--primario-oscuro); }
+.boton--secundario { border-color: var(--primario); color: var(--primario); background: var(--superficie); }
+.boton--peligro { border-color: var(--error); color: var(--error); background: var(--superficie); }
+.boton--texto { min-height: 36px; padding: 0.25rem 0.5rem; color: var(--suave); font-weight: 500; }
+.boton--chico { min-height: 36px; padding: 0.25rem 0.75rem; font-size: 0.9rem; }
+.boton--ancho { width: 100%; }
+.enlace-chico { font-size: 0.9rem; }
+.acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* Bloques y formularios -------------------------------------------------------------------------- */
+.bloque {
+    margin: 0 0 1rem; padding: 1rem; border: 0; border-radius: var(--radio);
+    background: var(--superficie); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+/* Los <fieldset> tienen por defecto un ancho mínimo igual a su contenido: en celular se desbordan. */
+fieldset { min-width: 0; }
+/* El <legend> flotante queda dentro de la tarjeta (si no, el navegador lo dibuja sobre el borde). */
+.bloque legend { float: left; width: 100%; padding: 0; margin-bottom: 0.75rem; font-weight: 700; font-size: 1.05rem; }
+.bloque legend ~ * { clear: both; }
+.bloque legend ~ * + * { margin-top: 0.875rem; }
+.bloque--peligro { border: 1px solid var(--error-fondo); }
+.titulo-con-accion { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+
+.formulario { display: grid; gap: 0.875rem; }
+.formulario--linea { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem; }
+.formulario--linea .campo { flex: 1 1 12rem; }
+.campo { display: grid; gap: 0.25rem; }
+.campo > span { font-weight: 600; font-size: 0.95rem; }
+.campo--corto { max-width: 10rem; }
+.campo input, .campo select, .campo textarea, .turno input {
+    width: 100%; padding: 0.625rem 0.75rem; font: inherit;
+    border: 1px solid var(--borde); border-radius: 8px; background: #FFFFFF;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus, .turno input:focus {
+    outline: 2px solid var(--primario); outline-offset: 1px;
+}
+.campo--color input { height: 48px; padding: 0.25rem; }
+.fila-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.ayuda { color: var(--suave); font-size: 0.85rem; }
+.error { color: var(--error); font-size: 0.85rem; font-weight: 600; }
+.opcion { display: flex; gap: 0.625rem; align-items: center; min-height: 44px; cursor: pointer; }
+.opcion input { width: 20px; height: 20px; }
+
+/* Inicio ----------------------------------------------------------------------------------------- */
+.tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin: 1rem 0 1.5rem; }
+.tarjeta {
+    display: grid; gap: 0.125rem; padding: 1rem; border-radius: var(--radio);
+    background: var(--superficie); color: var(--texto); text-decoration: none; text-align: center;
+}
+.tarjeta__numero { font-size: 1.75rem; font-weight: 700; color: var(--primario); }
+
+/* Productos -------------------------------------------------------------------------------------- */
+.lista-productos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.fila-producto {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem;
+    border: 1px solid var(--borde); border-radius: var(--radio);
+}
+.fila-producto--agotado { background: #FAFAF8; }
+.fila-producto--agotado strong { color: var(--suave); }
+.fila-producto__datos {
+    flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.125rem 0.5rem;
+    align-items: baseline; color: var(--texto); text-decoration: none;
+}
+.fila-producto__datos strong { width: 100%; }
+.miniatura { flex: none; width: 56px; height: 56px; border-radius: 8px; object-fit: cover; }
+.miniatura--vacia {
+    display: grid; place-items: center; background: var(--fondo);
+    color: var(--suave); font-size: 0.65rem; text-align: center;
+}
+.etiqueta {
+    display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600; background: #E8F1EE; color: var(--primario);
+}
+.etiqueta--alerta { background: var(--error-fondo); color: var(--error); }
+.etiqueta--gris { background: var(--fondo); color: var(--suave); }
+.vacio { padding: 1rem 0; color: var(--suave); }
+
+.fotos {
+    list-style: none; margin: 0 0 1rem; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;
+}
+.foto { position: relative; display: grid; gap: 0.375rem; }
+.foto img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+.foto .etiqueta { position: absolute; top: 0.375rem; left: 0.375rem; }
+.foto__acciones { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+/* Categorías y horarios -------------------------------------------------------------------------- */
+.lista-categorias { list-style: none; margin: 0; padding: 0; }
+.fila-secundaria { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; }
+.dia { border: 0; margin: 0; padding: 0.75rem 0; border-bottom: 1px solid var(--borde); }
+.dia legend { font-weight: 700; padding: 0; }
+.turnos { display: grid; gap: 0.5rem; margin-top: 0.375rem; }
+.turno { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem; align-items: center; }
+
+/* Mi comercio ------------------------------------------------------------------------------------ */
+.imagenes-comercio { display: grid; gap: 1.5rem; }
+.imagen-comercio { display: grid; gap: 0.5rem; align-content: start; }
+.logo-actual { width: 96px; height: 96px; object-fit: contain; border-radius: 50%; background: var(--fondo); }
+.portada-actual { width: 100%; max-width: 320px; height: auto; border-radius: 8px; }
+
+/* QR de mesas ------------------------------------------------------------------------------------ */
+.hoja-qr { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.tarjeta-qr {
+    display: grid; justify-items: center; gap: 0.25rem; padding: 0.75rem;
+    border: 2px solid var(--primario); border-radius: 12px; background: #FFFFFF; text-align: center;
+    break-inside: avoid;
+}
+.tarjeta-qr strong { font-size: 1.25rem; color: var(--primario); }
+
+/* Login ------------------------------------------------------------------------------------------ */
+.acceso { display: grid; min-height: 100vh; place-items: center; padding: 1rem; }
+.acceso__caja {
+    width: 100%; max-width: 24rem; padding: 1.5rem; border-radius: 16px;
+    background: var(--superficie); box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 720px) {
+    .imagenes-comercio { grid-template-columns: 1fr 1fr; }
+    .turnos { grid-template-columns: 1fr 1fr; }
+}
+
+@media print {
+    .menu, .no-imprimir, .aviso { display: none !important; }
+    body, .contenido { background: #FFFFFF; padding: 0; }
+    .hoja-qr { grid-template-columns: repeat(3, 1fr); }
+}

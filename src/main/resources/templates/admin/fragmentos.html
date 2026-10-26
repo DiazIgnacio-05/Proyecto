@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<!--/* Piezas comunes del panel: <head>, menú y mensajes. Cada página las incluye con th:replace. */-->
+
+<head th:fragment="head(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title th:text="|${titulo} · Panel|">Panel</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+
+<body>
+<header th:fragment="menu" class="menu">
+    <div class="menu__barra">
+        <div class="menu__comercio">
+            <strong th:text="${comercio.nombre}">Comercio</strong>
+            <a th:if="${urlSitio}" th:href="${urlSitio}" target="_blank" rel="noopener">Ver mi sitio ↗</a>
+        </div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="boton boton--texto">Salir</button>
+        </form>
+    </div>
+    <nav class="menu__nav" aria-label="Secciones del panel">
+        <a th:href="@{/admin}" th:classappend="${seccion == 'inicio'} ? 'activo'">Inicio</a>
+        <a th:href="@{/admin/productos}" th:classappend="${seccion == 'productos'} ? 'activo'">Productos</a>
+        <a th:href="@{/admin/categorias}" th:classappend="${seccion == 'categorias'} ? 'activo'">Categorías</a>
+        <a th:href="@{/admin/horarios}" th:classappend="${seccion == 'horarios'} ? 'activo'">Horarios</a>
+        <a th:href="@{/admin/comercio}" th:classappend="${seccion == 'comercio'} ? 'activo'">Mi comercio</a>
+        <a th:if="${comercio.rubro.usaMesas()}" th:href="@{/admin/mesas}"
+           th:classappend="${seccion == 'mesas'} ? 'activo'">QR de mesas</a>
+        <a th:href="@{/admin/cuenta}" th:classappend="${seccion == 'cuenta'} ? 'activo'">Mi cuenta</a>
+    </nav>
+</header>
+
+<th:block th:fragment="mensajes">
+    <div th:if="${comercio != null and !comercio.estado.permiteEditar()}" class="aviso aviso--alerta" role="alert">
+        Tu sitio está <strong>suspendido</strong> por falta de pago del abono. Podés ver tus datos, pero
+        no modificarlos. Escribinos para regularizarlo.
+    </div>
+    <div th:if="${ok}" class="aviso aviso--ok" role="status" th:text="${ok}">Guardado</div>
+    <div th:if="${error}" class="aviso aviso--error" role="alert" th:text="${error}">Error</div>
+</th:block>
+</body>
+</html>

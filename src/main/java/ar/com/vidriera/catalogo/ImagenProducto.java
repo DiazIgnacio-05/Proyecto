@@ -44,4 +44,8 @@ public class ImagenProducto extends EntidadDelComercio {
     public int getOrden() {
         return orden;
     }
+
+    void setOrden(int orden) {
+        this.orden = orden;
+    }
 }

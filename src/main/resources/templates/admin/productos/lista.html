@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Productos')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+
+    <div class="titulo-con-accion">
+        <h1>Productos</h1>
+        <a class="boton boton--principal" th:href="@{/admin/productos/nuevo}">+ Agregar</a>
+    </div>
+
+    <p th:if="${secciones.isEmpty()}" class="vacio">
+        Primero creá una <a th:href="@{/admin/categorias}">categoría</a> (por ejemplo "Pizzas" o "Remeras").
+    </p>
+
+    <section th:each="seccion : ${secciones}" class="bloque">
+        <div class="titulo-con-accion">
+            <h2>
+                <span th:text="${seccion.nombre}">Categoría</span>
+                <span th:unless="${seccion.activa}" class="etiqueta etiqueta--gris">Oculta</span>
+            </h2>
+            <a class="enlace-chico" th:href="@{/admin/productos/nuevo(categoria=${seccion.id})}">+ Agregar acá</a>
+        </div>
+        <p th:if="${seccion.productos.isEmpty()}" class="suave">Sin productos.</p>
+        <ul class="lista-productos">
+            <li th:each="p : ${seccion.productos}" th:id="|producto-${p.id}|" class="fila-producto"
+                th:classappend="${!p.disponible} ? 'fila-producto--agotado'">
+                <img th:if="${p.imagenUrl}" th:src="${p.imagenUrl}" alt="" class="miniatura" width="56" height="56" loading="lazy">
+                <span th:unless="${p.imagenUrl}" class="miniatura miniatura--vacia" aria-hidden="true">sin foto</span>
+                <a class="fila-producto__datos" th:href="@{/admin/productos/{id}(id=${p.id})}">
+                    <strong th:text="${p.nombre}">Producto</strong>
+                    <span th:text="${@pesos.de(p.precio)}">$ 0</span>
+                    <span th:if="${!p.disponible}" class="etiqueta etiqueta--alerta">Sin stock</span>
+                    <span th:if="${p.destacado}" class="etiqueta">Recomendado</span>
+                </a>
+                <form th:action="@{/admin/productos/{id}/disponible(id=${p.id})}" method="post">
+                    <button type="submit" class="boton boton--chico boton--secundario"
+                            th:text="${p.disponible} ? 'Marcar sin stock' : 'Marcar disponible'">Marcar sin stock</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+</main>
+</body>
+</html>

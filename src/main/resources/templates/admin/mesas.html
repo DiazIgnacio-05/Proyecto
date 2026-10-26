@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('QR de mesas')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <div class="no-imprimir">
+        <h1>QR de mesas</h1>
+        <p class="suave">
+            Imprimí esta hoja, recortá cada tarjeta y ponela en su mesa. Al escanearla, el cliente ve el menú
+            y su pedido llega por WhatsApp con el número de mesa.
+        </p>
+        <p th:if="${mesas.isEmpty()}" class="aviso aviso--alerta">
+            Todavía no cargaste mesas. Indicá cuántas tenés en <a th:href="@{/admin/comercio}">Mi comercio</a>.
+        </p>
+        <button th:unless="${mesas.isEmpty()}" type="button" class="boton boton--principal" onclick="window.print()">Imprimir</button>
+    </div>
+
+    <div class="hoja-qr">
+        <div class="tarjeta-qr" th:each="mesa : ${mesas}">
+            <img th:src="@{/admin/mesas/{n}/qr.svg(n=${mesa})}" th:alt="|QR de la mesa ${mesa}|" width="180" height="180">
+            <strong th:text="|Mesa ${mesa}|">Mesa 1</strong>
+            <span th:text="${comercio.nombre}">Comercio</span>
+            <span class="pequeno">Escaneá para ver el menú y pedir</span>
+        </div>
+    </div>
+</main>
+</body>
+</html>
