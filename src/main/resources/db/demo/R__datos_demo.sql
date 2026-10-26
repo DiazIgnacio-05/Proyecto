@@ -13,7 +13,8 @@ DELETE FROM comercio WHERE slug IN ('sabores-del-valle', 'nogal', 'la-alameda');
 -- ---------------------------------------------------------------------------------------------
 INSERT INTO comercio (slug, nombre, rubro, estado, descripcion, whatsapp, telefono, email, direccion,
                       latitud, longitud, color_primario, color_secundario, instagram, facebook,
-                      seo_titulo, seo_descripcion, cantidad_mesas, fecha_alta, vencimiento_abono)
+                      seo_titulo, seo_descripcion, cantidad_mesas, ofrece_envio, fecha_alta,
+                      vencimiento_abono)
 VALUES
     ('sabores-del-valle', 'Sabores del Valle', 'RESTAURANTE', 'ACTIVO',
      'Cocina regional catamarqueña: empanadas, locro y cabrito al horno de barro.',
@@ -21,21 +22,21 @@ VALUES
      'Av. Belgrano 1250, San Fernando del Valle de Catamarca', -28.468900, -65.784200,
      '#8C2F1B', '#E9B44C', 'saboresdelvalle', NULL,
      'Sabores del Valle · Cocina catamarqueña',
-     'Empanadas, locro y cabrito. Mirá el menú y pedí por WhatsApp.', 12,
+     'Empanadas, locro y cabrito. Mirá el menú y pedí por WhatsApp.', 12, TRUE,
      CURRENT_DATE, CURRENT_DATE + 30),
     ('nogal', 'Nogal Indumentaria', 'ROPA', 'ACTIVO',
      'Ropa urbana para todos los días. Envíos en el Valle Central.',
      '3834000002', NULL, 'ventas@nogal.test',
      'Rivadavia 640, San Fernando del Valle de Catamarca', -28.469600, -65.779500,
      '#2E3A59', '#C9A227', 'nogal.indumentaria', 'nogalindumentaria',
-     'Nogal Indumentaria', 'Remeras, buzos y jeans. Consultá talles y colores por WhatsApp.', 0,
+     'Nogal Indumentaria', 'Remeras, buzos y jeans. Consultá talles y colores por WhatsApp.', 0, TRUE,
      CURRENT_DATE, CURRENT_DATE + 30),
     ('la-alameda', 'Bazar La Alameda', 'ARTICULOS', 'ACTIVO',
      'Bazar, regalería y artículos para el hogar.',
      '3834000003', '383 4000003', NULL,
      'Sarmiento 455, San Fernando del Valle de Catamarca', -28.466800, -65.776300,
      '#2F6B4F', '#F2C14E', 'bazarlaalameda', NULL,
-     'Bazar La Alameda', 'Todo para tu casa y para regalar. Buscá y pedí por WhatsApp.', 0,
+     'Bazar La Alameda', 'Todo para tu casa y para regalar. Buscá y pedí por WhatsApp.', 0, FALSE,
      CURRENT_DATE, CURRENT_DATE + 30);
 
 INSERT INTO usuario (email, password_hash, nombre, rol, comercio_id)

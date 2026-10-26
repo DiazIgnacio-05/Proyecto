@@ -64,6 +64,9 @@ public class Comercio {
 
     private int cantidadMesas;
 
+    /** Si el pedido por WhatsApp ofrece "envío a domicilio" además de retiro en el local. */
+    private boolean ofreceEnvio;
+
     @Column(nullable = false)
     private LocalDate fechaAlta;
 
@@ -194,6 +197,19 @@ public class Comercio {
             throw new IllegalArgumentException("La cantidad de mesas debe estar entre 0 y 200");
         }
         this.cantidadMesas = cantidadMesas;
+    }
+
+    /** Las mesas solo cuentan si el rubro trabaja con mesas (restaurantes). */
+    public boolean tieneMesa(int numero) {
+        return rubro.usaMesas() && numero >= 1 && numero <= cantidadMesas;
+    }
+
+    public boolean isOfreceEnvio() {
+        return ofreceEnvio;
+    }
+
+    public void setOfreceEnvio(boolean ofreceEnvio) {
+        this.ofreceEnvio = ofreceEnvio;
     }
 
     public LocalDate getFechaAlta() {

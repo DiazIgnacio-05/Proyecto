@@ -24,6 +24,10 @@ public class SeguridadConfig {
                         .requestMatchers("/superadmin/**").hasRole(Rol.SUPER_ADMIN.name())
                         .requestMatchers("/admin/**").hasRole(Rol.DUENO.name())
                         .anyRequest().permitAll())
+                // CSRF protege acciones que cambian algo en nombre de un usuario logueado. El envío
+                // del pedido no guarda nada ni usa sesión (solo arma un link de WhatsApp), y pedir un
+                // token obligaría a crear una sesión por cada visitante del sitio público.
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/pedido"))
                 .formLogin(Customizer.withDefaults())
                 .logout(Customizer.withDefaults());
         return http.build();
