@@ -1,0 +1,25 @@
+/* Estilos base compartidos. Cada comercio redefine --color-primario y --color-secundario. */
+:root {
+    --color-primario: #1F6F5C;
+    --color-secundario: #F4B942;
+    --color-texto: #1d1d1f;
+    --color-fondo: #fafaf7;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--color-texto);
+    background: var(--color-fondo);
+    line-height: 1.5;
+}
+
+.contenedor {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+h1 { color: var(--color-primario); }
