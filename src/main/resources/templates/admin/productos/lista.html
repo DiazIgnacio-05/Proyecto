@@ -34,6 +34,9 @@
                     <span th:text="${@pesos.de(p.precio)}">$ 0</span>
                     <span th:if="${!p.disponible}" class="etiqueta etiqueta--alerta">Sin stock</span>
                     <span th:if="${p.destacado}" class="etiqueta">Recomendado</span>
+                    <span th:if="${p.variantes > 0}" class="etiqueta"
+                          th:classappend="${p.variantesConStock == 0} ? 'etiqueta--alerta' : 'etiqueta--gris'"
+                          th:text="|${p.variantesConStock} de ${p.variantes} con stock|">3 de 5 con stock</span>
                 </a>
                 <form th:action="@{/admin/productos/{id}/disponible(id=${p.id})}" method="post">
                     <button type="submit" class="boton boton--chico boton--secundario"

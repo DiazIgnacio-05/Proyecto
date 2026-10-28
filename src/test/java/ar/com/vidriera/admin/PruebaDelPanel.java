@@ -62,9 +62,13 @@ abstract class PruebaDelPanel extends PruebaDeIntegracion {
     private final List<Long> creados = new ArrayList<>();
 
     protected ComercioDePrueba crearComercio(String prefijo) {
+        return crearComercio(prefijo, Rubro.RESTAURANTE);
+    }
+
+    protected ComercioDePrueba crearComercio(String prefijo, Rubro rubro) {
         String slug = prefijo + "-" + UUID.randomUUID().toString().substring(0, 8);
-        Comercio comercio = new Comercio(slug, "Comercio " + slug, Rubro.RESTAURANTE, "3834111111", LocalDate.now());
-        comercio.setCantidadMesas(4);
+        Comercio comercio = new Comercio(slug, "Comercio " + slug, rubro, "3834111111", LocalDate.now());
+        comercio.setCantidadMesas(rubro.usaMesas() ? 4 : 0);
         comercio = comercios.save(comercio);
         creados.add(comercio.getId());
         String email = slug + "@prueba.test";
