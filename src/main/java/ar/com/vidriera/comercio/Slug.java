@@ -1,5 +1,7 @@
 package ar.com.vidriera.comercio;
 
+import java.text.Normalizer;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -26,6 +28,22 @@ public final class Slug {
 
     public static boolean esReservado(String slug) {
         return RESERVADOS.contains(slug);
+    }
+
+    /** Propone un slug a partir del nombre: "Pizzería Don José" → "pizzeria-don-jose". */
+    public static String sugerir(String nombre) {
+        if (nombre == null) {
+            return "";
+        }
+        String sinTildes = Normalizer.normalize(nombre, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        String slug = sinTildes.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-+)|(-+$)", "");
+        if (slug.length() > LARGO_MAXIMO) {
+            slug = slug.substring(0, LARGO_MAXIMO).replaceAll("-+$", "");
+        }
+        return slug;
     }
 
     public static String validar(String slug) {

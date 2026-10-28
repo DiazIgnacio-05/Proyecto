@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Nuevo comercio')}"></head>
+<body>
+<header th:replace="~{superadmin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{superadmin/fragmentos :: mensajes}"></th:block>
+    <h1>Nuevo comercio</h1>
+    <p class="suave">Con estos datos alcanza: el dueño completa el resto (productos, horarios, fotos) desde su panel.</p>
+
+    <form th:object="${form}" th:action="@{/superadmin/comercios}" method="post" class="formulario">
+        <div th:if="${#fields.hasErrors('*')}" class="aviso aviso--error" role="alert">
+            <p th:if="${#fields.hasGlobalErrors()}" th:each="e : ${#fields.globalErrors()}" th:text="${e}">Error</p>
+            <p th:unless="${#fields.hasGlobalErrors()}">Revisá los campos marcados.</p>
+        </div>
+
+        <fieldset class="bloque">
+            <legend>Comercio</legend>
+            <label class="campo">
+                <span>Nombre</span>
+                <input th:field="*{nombre}" maxlength="120" required data-nombre-comercio>
+                <small class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+            </label>
+            <label class="campo">
+                <span>Subdominio</span>
+                <input th:field="*{slug}" maxlength="63" pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?" data-slug
+                       placeholder="se arma solo a partir del nombre">
+                <small class="ayuda">Será la dirección del sitio: <strong data-slug-vista>nombre</strong>.vidriera.com.ar.
+                    Minúsculas, números y guiones. No se puede cambiar después.</small>
+                <small class="error" th:if="${#fields.hasErrors('slug')}" th:errors="*{slug}"></small>
+            </label>
+            <label class="campo">
+                <span>Rubro</span>
+                <select th:field="*{rubro}" required>
+                    <option value="">Elegí el rubro</option>
+                    <option th:each="r : ${rubros}" th:value="${r}" th:text="${r.etiqueta}">Restaurante</option>
+                </select>
+                <small class="error" th:if="${#fields.hasErrors('rubro')}" th:errors="*{rubro}"></small>
+            </label>
+            <label class="campo">
+                <span>WhatsApp del comercio</span>
+                <input th:field="*{whatsapp}" inputmode="tel" placeholder="Ej.: 383 4123456" required>
+                <small class="error" th:if="${#fields.hasErrors('whatsapp')}" th:errors="*{whatsapp}"></small>
+            </label>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Dueño</legend>
+            <label class="campo">
+                <span>Nombre</span>
+                <input th:field="*{nombreDueno}" maxlength="120" autocomplete="off" required>
+                <small class="error" th:if="${#fields.hasErrors('nombreDueno')}" th:errors="*{nombreDueno}"></small>
+            </label>
+            <label class="campo">
+                <span>Email (con este entra al panel)</span>
+                <input type="email" th:field="*{emailDueno}" maxlength="120" autocomplete="off" required>
+                <small class="error" th:if="${#fields.hasErrors('emailDueno')}" th:errors="*{emailDueno}"></small>
+            </label>
+            <small class="ayuda">Se genera una contraseña temporal; la vas a ver al crear el comercio.</small>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Abono</legend>
+            <label class="campo campo--corto">
+                <span>Pago hasta</span>
+                <input type="date" th:field="*{vencimientoAbono}" required>
+                <small class="error" th:if="${#fields.hasErrors('vencimientoAbono')}" th:errors="*{vencimientoAbono}"></small>
+            </label>
+        </fieldset>
+
+        <button type="submit" class="boton boton--principal">Crear comercio</button>
+    </form>
+</main>
+<script>
+    // Sugiere el subdominio mientras se escribe el nombre (la misma regla que Slug.sugerir en el servidor).
+    (() => {
+        const nombre = document.querySelector('[data-nombre-comercio]');
+        const slug = document.querySelector('[data-slug]');
+        const vista = document.querySelector('[data-slug-vista]');
+        let tocado = slug.value !== '';
+        const sugerir = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 63).replace(/-+$/, '');
+        const actualizar = () => { vista.textContent = slug.value || sugerir(nombre.value) || 'nombre'; };
+        nombre.addEventListener('input', () => { if (!tocado) slug.value = sugerir(nombre.value); actualizar(); });
+        slug.addEventListener('input', () => { tocado = slug.value !== ''; actualizar(); });
+        actualizar();
+    })();
+</script>
+</body>
+</html>

@@ -36,7 +36,8 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
 - `admin/` panel del comercio: `FiltroPanelDelComercio` (tenant desde el usuario), servicios, formularios y
   controladores de productos, categorías, horarios, "Mi comercio", QR de mesas y cuenta.
 - `imagen/` subida de fotos: `ProcesadorImagenes` (valida y achica), `AlmacenamientoImagenes` (disco local).
-- `superadmin/` panel del super-admin (Etapa 5; hoy solo la portada).
+- `superadmin/` panel del super-admin: `AltaComercioService` (alta en dos transacciones),
+  `GestionComerciosService` (listado, estados, abono, módulos, reseteo de clave), controladores y vistas.
 - `config/` propiedades tipadas (`vidriera.*`), seguridad, reloj.
 - `publico/` sitio público: `restaurante.html` (menú) o `catalogo.html` (grilla con buscador, filtros y
   talles) según `rubro.usaBuscador()`; partes comunes en `fragments/sitio.html`. SEO (`MetadatosPagina`)
@@ -99,6 +100,17 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
 17. **Buscador del catálogo**: GET `/?q=...&categoria=...` (funciona sin JS y el link se puede
     compartir). Filtra en memoria con `BuscadorCatalogo`: todas las palabras, sin importar mayúsculas
     ni tildes, en nombre, descripción o categoría. Una categoría que no es del comercio se ignora.
+18. **Super-admin** (`app.<dominio>/superadmin`, rol SUPER_ADMIN):
+    - Alta: comercio + dueño con contraseña temporal (`GeneradorContrasenas`, SecureRandom, sin
+      caracteres confusos) que debe cambiar al entrar + categorías sugeridas del rubro. Dos
+      transacciones (el tenant se fija al abrir la sesión): si falla la segunda se borra el comercio.
+    - La contraseña temporal se muestra UNA vez (mensaje flash) con link para mandarla por WhatsApp;
+      nunca se guarda en texto plano. Resetear clave hace lo mismo y desbloquea el login.
+    - Suspensión MANUAL (decisión de Ignacio): el listado avisa vencidos (`EstadoAbono`) y el
+      super-admin suspende. "Registrar pago" suma un mes desde el vencimiento (o desde hoy si ya
+      venció) y reactiva si estaba suspendido.
+    - Contar productos de todos los comercios usa `ejecutarComoSistema` + transacción NUEVA
+      (REQUIRES_NEW): dentro de una transacción ya abierta el modo sistema no tendría efecto.
 
 ## Convenciones
 - Código y dominio en español, sin ñ ni tildes en identificadores (`DUENO`, `Categoria`). Sin Lombok.
@@ -136,11 +148,14 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
   o los tests (Tomcat responde 400 a parámetros mal codificados).
 - Las tarjetas del catálogo llevan también la clase `.producto` (la usa `carrito.js`): sus estilos de fila
   se anulan en `.tarjeta-producto`.
+- Thymeleaf 3.1 bloquea `T(clase)` en las vistas: pasar listas de enums desde el controlador.
+- Claude no puede leer contraseñas de `.env` (bloqueado a propósito): para probar el super-admin en el
+  navegador, que Ignacio inicie sesión; la cobertura automática está en `SuperAdminTest`.
 
 ## Estado por etapas
 - [x] Etapa 1: estructura, modelo multi-tenant, datos demo, tests de aislamiento y horarios.
 - [x] Etapa 2: sitio público restaurante + QR + pedido por WhatsApp.
 - [x] Etapa 3: panel del comercio con autenticación.
 - [x] Etapa 4: rubros ropa y artículos.
-- [ ] Etapa 5: panel super-admin (alta, baja, suspensión).
+- [x] Etapa 5: panel super-admin (alta, baja, suspensión).
 - [ ] Etapa 6: despliegue y guía de alta de clientes.

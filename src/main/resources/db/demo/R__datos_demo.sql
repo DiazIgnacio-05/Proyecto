@@ -37,7 +37,7 @@ VALUES
      'Sarmiento 455, San Fernando del Valle de Catamarca', -28.466800, -65.776300,
      '#2F6B4F', '#F2C14E', 'bazarlaalameda', NULL,
      'Bazar La Alameda', 'Todo para tu casa y para regalar. Buscá y pedí por WhatsApp.', 0, FALSE,
-     CURRENT_DATE, CURRENT_DATE + 30);
+     CURRENT_DATE - 60, CURRENT_DATE - 3);  -- abono vencido, para mostrar el aviso en el super-admin
 
 INSERT INTO usuario (email, password_hash, nombre, rol, comercio_id)
 SELECT v.email, '$2a$10$DiyQTermoXLlrNcWaeqzROq6YZXCq2cy94Os29ThvRIYzEi2.XXqC', v.nombre, 'DUENO', c.id
