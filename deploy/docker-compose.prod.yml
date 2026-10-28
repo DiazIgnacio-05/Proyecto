@@ -1,0 +1,65 @@
+# Producción: base de datos + aplicación + Caddy (HTTPS), en un solo servidor.
+# Uso (desde la carpeta deploy/, con el archivo .env completo):
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Solo Caddy publica puertos (80 y 443); la base y la app quedan en la red interna de Docker.
+name: vidriera
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vidriera
+      POSTGRES_USER: ${DB_USER:?Definí DB_USER en deploy/.env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definí DB_PASSWORD en deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d vidriera"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: vidriera-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/vidriera
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      VIDRIERA_DOMINIO_BASE: ${VIDRIERA_DOMINIO_BASE:?Definí VIDRIERA_DOMINIO_BASE en deploy/.env}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:?Definí SUPERADMIN_EMAIL en deploy/.env}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:?Definí SUPERADMIN_PASSWORD en deploy/.env}
+    volumes:
+      - imagenes:/datos/imagenes
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      VIDRIERA_DOMINIO_BASE: ${VIDRIERA_DOMINIO_BASE}
+      ACME_EMAIL: ${ACME_EMAIL:?Definí ACME_EMAIL en deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificado de origen de Cloudflare (origen.pem y origen-key.pem). Ver docs/despliegue.md.
+      - ./certs:/certs:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  pgdata:
+  imagenes:
+  caddy-data:
+  caddy-config:

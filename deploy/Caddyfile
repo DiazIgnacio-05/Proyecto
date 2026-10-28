@@ -1,0 +1,38 @@
+# Caddy: servidor web que atiende HTTPS y le pasa los requests a la app (proxy inverso).
+# Las {$VARIABLES} salen del archivo deploy/.env (vía docker-compose.prod.yml).
+{
+	email {$ACME_EMAIL}
+	# Dominios propios de los comercios: Caddy pide el certificado a Let's Encrypt la primera vez que
+	# alguien entra, pero antes le pregunta a la app si ese dominio está dado de alta.
+	on_demand_tls {
+		ask http://app:8080/interno/dominio-permitido
+	}
+}
+
+(vidriera) {
+	# Uso interno de Caddy: desde Internet no existe.
+	handle /interno/* {
+		respond 404
+	}
+	handle {
+		reverse_proxy app:8080
+	}
+	request_body {
+		max_size 12MB
+	}
+}
+
+# Plataforma (app.<dominio>) y subdominios de los comercios. Pasan por Cloudflare, que se conecta a
+# este servidor con el "certificado de origen" de Cloudflare (válido para <dominio> y *.<dominio>).
+{$VIDRIERA_DOMINIO_BASE}, *.{$VIDRIERA_DOMINIO_BASE} {
+	tls /certs/origen.pem /certs/origen-key.pem
+	import vidriera
+}
+
+# Cualquier otro dominio: dominios propios de los comercios (módulo pago), sin Cloudflare.
+https:// {
+	tls {
+		on_demand
+	}
+	import vidriera
+}

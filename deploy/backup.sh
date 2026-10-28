@@ -22,6 +22,8 @@ COMPOSE=(docker compose -f docker-compose.prod.yml)
 FECHA="$(date +%F_%H%M)"
 
 mkdir -p "$BACKUP_DIR"
+# Si algo falla a mitad, no quedan archivos temporales a medio escribir.
+trap 'rm -f "$BACKUP_DIR"/.*.tmp' EXIT
 echo "[$(date '+%F %T')] Backup $FECHA en $BACKUP_DIR"
 
 # Base de datos en formato "custom" de PostgreSQL (comprimido; se restaura con pg_restore).

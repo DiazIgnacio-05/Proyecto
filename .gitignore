@@ -39,5 +39,7 @@ build/
 .mvn/jvm.config
 # Imágenes subidas en desarrollo
 /uploads/
+# Certificado de origen de Cloudflare (clave privada del servidor de producción)
+/deploy/certs/
 # Configuración local del navegador de vista previa de Claude Code
 .claude/launch.json
