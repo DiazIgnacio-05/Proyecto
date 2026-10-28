@@ -43,3 +43,36 @@ jobs:
           name: reportes-de-tests
           path: target/surefire-reports/
           retention-days: 7
+
+  # Verifica que los archivos de producción (deploy/) sigan funcionando: que la imagen compile y que
+  # el Compose y el Caddyfile sean válidos. No despliega nada.
+  imagen:
+    name: docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DB_USER: vidriera
+      DB_PASSWORD: solo-para-validar
+      VIDRIERA_DOMINIO_BASE: vidriera.test
+      SUPERADMIN_EMAIL: admin@vidriera.test
+      SUPERADMIN_PASSWORD: solo-para-validar
+      ACME_EMAIL: admin@vidriera.test
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Construir la imagen de producción
+        run: docker build -t vidriera-app .
+
+      - name: Validar el Compose de producción
+        run: docker compose -f deploy/docker-compose.prod.yml config --quiet
+
+      - name: Validar el Caddyfile (con un certificado de prueba)
+        run: |
+          mkdir -p /tmp/certs
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=vidriera.test" \
+            -keyout /tmp/certs/origen-key.pem -out /tmp/certs/origen.pem
+          docker run --rm -e VIDRIERA_DOMINIO_BASE -e ACME_EMAIL \
+            -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" -v /tmp/certs:/certs:ro \
+            caddy:2.10-alpine caddy validate --config /etc/caddy/Caddyfile
