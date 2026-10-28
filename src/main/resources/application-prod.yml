@@ -1,0 +1,25 @@
+# Perfil de producción (lo activa el Dockerfile con SPRING_PROFILES_ACTIVE=prod).
+# Sin datos demo. Las variables sin valor por defecto son obligatorias: si faltan, la app no arranca.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+server:
+  # La app está detrás de Caddy (y Cloudflare): Caddy atiende HTTPS y le pasa el request por HTTP con
+  # los encabezados X-Forwarded-*. Con "native", Tomcat los acepta solo si vienen de una IP interna
+  # (la red de Docker), así que desde afuera nadie puede hacerse pasar por HTTPS.
+  forward-headers-strategy: native
+  servlet:
+    session:
+      cookie:
+        # La cookie de sesión del panel viaja solo por HTTPS y no la mandan otros sitios.
+        secure: true
+        same-site: lax
+      timeout: 8h
+
+vidriera:
+  dominio-base: ${VIDRIERA_DOMINIO_BASE}
+  imagenes:
+    directorio: ${VIDRIERA_IMAGENES_DIR:/datos/imagenes}
