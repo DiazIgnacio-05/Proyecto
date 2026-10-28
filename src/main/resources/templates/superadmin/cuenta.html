@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Mi cuenta')}"></head>
+<body>
+<header th:replace="~{superadmin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{superadmin/fragmentos :: mensajes}"></th:block>
+    <h1>Mi cuenta</h1>
+    <p class="suave">Entrás con <strong th:text="${usuario.username}">email</strong>.</p>
+
+    <form th:action="@{/superadmin/cuenta}" method="post" class="formulario bloque">
+        <h2>Cambiar contraseña</h2>
+        <label class="campo">
+            <span>Contraseña actual</span>
+            <input type="password" name="actual" autocomplete="current-password" required>
+        </label>
+        <label class="campo">
+            <span>Contraseña nueva</span>
+            <input type="password" name="nueva" autocomplete="new-password" th:minlength="${largoMinimo}" required>
+        </label>
+        <label class="campo">
+            <span>Repetí la contraseña nueva</span>
+            <input type="password" name="repetida" autocomplete="new-password" th:minlength="${largoMinimo}" required>
+        </label>
+        <button type="submit" class="boton boton--principal">Cambiar contraseña</button>
+    </form>
+</main>
+</body>
+</html>

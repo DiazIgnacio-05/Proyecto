@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<!--/* Piezas comunes del panel de super-admin. El <head> se reutiliza del panel de comercio. */-->
+<body>
+
+<header th:fragment="menu" class="menu">
+    <div class="menu__barra">
+        <div class="menu__comercio"><strong>Vidriera · Super-admin</strong></div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="boton boton--texto">Salir</button>
+        </form>
+    </div>
+    <nav class="menu__nav" aria-label="Secciones del super-admin">
+        <a th:href="@{/superadmin}" th:classappend="${seccion == 'comercios'} ? 'activo'">Comercios</a>
+        <a th:href="@{/superadmin/comercios/nuevo}" th:classappend="${seccion == 'nuevo'} ? 'activo'">+ Nuevo comercio</a>
+        <a th:href="@{/superadmin/cuenta}" th:classappend="${seccion == 'cuenta'} ? 'activo'">Mi cuenta</a>
+    </nav>
+</header>
+
+<th:block th:fragment="mensajes">
+    <div th:if="${ok}" class="aviso aviso--ok" role="status" th:text="${ok}">Guardado</div>
+    <div th:if="${error}" class="aviso aviso--error" role="alert" th:text="${error}">Error</div>
+
+    <!--/* Credenciales recién generadas: se ven una sola vez (llegan como mensaje flash). */-->
+    <section th:if="${credenciales}" class="bloque credenciales" aria-labelledby="titulo-credenciales">
+        <h2 id="titulo-credenciales">Datos para el dueño</h2>
+        <p class="suave">Se muestran <strong>una sola vez</strong>: copialos o mandalos ahora. Si se pierden,
+            generá una contraseña nueva desde la ficha del comercio.</p>
+        <dl class="datos">
+            <dt>Panel</dt>
+            <dd th:text="${credenciales.urlPanel}">http://app.localhost:8080/login</dd>
+            <dt>Email</dt>
+            <dd th:text="${credenciales.email}">dueno@comercio.com</dd>
+            <dt>Contraseña temporal</dt>
+            <dd><code class="clave" th:text="${credenciales.contrasena}">abcd-efgh-ijkm</code></dd>
+        </dl>
+        <a th:if="${credenciales.linkWhatsApp}" th:href="${credenciales.linkWhatsApp}" target="_blank" rel="noopener"
+           class="boton boton--principal">Enviar por WhatsApp al comercio</a>
+    </section>
+</th:block>
+</body>
+</html>

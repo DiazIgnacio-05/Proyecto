@@ -1,13 +1,54 @@
 <!DOCTYPE html>
 <html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{admin/fragmentos :: head('Super-admin')}"></head>
-<body class="acceso">
-<main class="acceso__caja">
-    <h1>Panel de super-admin</h1>
-    <p class="suave">La gestión de comercios (alta, baja y suspensión) llega en la Etapa 5.</p>
-    <form th:action="@{/logout}" method="post">
-        <button type="submit" class="boton boton--secundario">Salir</button>
-    </form>
+<head th:replace="~{admin/fragmentos :: head('Comercios')}"></head>
+<body>
+<header th:replace="~{superadmin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{superadmin/fragmentos :: mensajes}"></th:block>
+
+    <div class="titulo-con-accion">
+        <h1>Comercios</h1>
+        <a class="boton boton--principal" th:href="@{/superadmin/comercios/nuevo}">+ Nuevo</a>
+    </div>
+
+    <div class="tarjetas tarjetas--cuatro">
+        <a class="tarjeta" th:href="@{/superadmin(filtro='ACTIVOS')}">
+            <span class="tarjeta__numero" th:text="${resumen.activos}">0</span><span>activos</span>
+        </a>
+        <a class="tarjeta" th:classappend="${resumen.vencidosActivos > 0} ? 'tarjeta--alerta'"
+           th:href="@{/superadmin(filtro='VENCIDOS')}">
+            <span class="tarjeta__numero" th:text="${resumen.vencidosActivos}">0</span><span>con abono vencido</span>
+        </a>
+        <a class="tarjeta" th:href="@{/superadmin(filtro='SUSPENDIDOS')}">
+            <span class="tarjeta__numero" th:text="${resumen.suspendidos}">0</span><span>suspendidos</span>
+        </a>
+        <a class="tarjeta" th:href="@{/superadmin(filtro='BAJAS')}">
+            <span class="tarjeta__numero" th:text="${resumen.bajas}">0</span><span>dados de baja</span>
+        </a>
+    </div>
+
+    <nav class="filtros-estado" aria-label="Filtrar comercios">
+        <a th:each="f : ${filtros}" th:href="@{/superadmin(filtro=${f})}"
+           th:classappend="${f == filtro} ? 'activo'" th:text="${f.etiqueta}">Todos</a>
+    </nav>
+
+    <p th:if="${comercios.isEmpty()}" class="vacio">No hay comercios en esta lista.</p>
+
+    <ul class="lista-comercios">
+        <li th:each="c : ${comercios}" class="bloque fila-comercio">
+            <div class="fila-comercio__titulo">
+                <a th:href="@{/superadmin/comercios/{id}(id=${c.id})}"><strong th:text="${c.nombre}">Comercio</strong></a>
+                <span class="etiqueta" th:classappend="'estado-' + ${#strings.toLowerCase(c.estado)}"
+                      th:text="${c.estado.name() == 'ACTIVO'} ? 'Activo' : (${c.estado.name() == 'SUSPENDIDO'} ? 'Suspendido' : 'Baja')">Activo</span>
+            </div>
+            <p class="suave pequeno">
+                <span th:text="${c.rubro}">Restaurante</span> · <span th:text="${c.slug}">slug</span>
+                · <span th:text="|${c.productos} productos|">0 productos</span>
+                <span th:if="${c.emailDueno}" th:text="|· ${c.emailDueno}|">· dueño</span>
+            </p>
+            <p class="abono" th:classappend="'abono-' + ${#strings.toLowerCase(c.abono.nivel)}" th:text="${c.abono.texto}">Vence en 5 días</p>
+        </li>
+    </ul>
 </main>
 </body>
 </html>

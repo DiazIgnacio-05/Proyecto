@@ -21,4 +21,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Object[]> contarPorCategoria();
 
     long countByDisponibleFalse();
+
+    /**
+     * Cantidad de productos de CADA comercio: filas {@code [comercioId, cantidad]}. Solo tiene sentido
+     * dentro de {@code TenantContext.ejecutarComoSistema} (sin filtro de tenant); con un comercio en
+     * el contexto devolvería solo el suyo.
+     */
+    @Query("select p.comercioId, count(p) from Producto p group by p.comercioId")
+    List<Object[]> contarPorComercio();
 }

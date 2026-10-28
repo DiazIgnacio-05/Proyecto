@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head(${c.nombre})}"></head>
+<body>
+<header th:replace="~{superadmin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{superadmin/fragmentos :: mensajes}"></th:block>
+    <a class="enlace-chico" th:href="@{/superadmin}">← Volver a comercios</a>
+
+    <div class="titulo-con-accion">
+        <h1 th:text="${c.nombre}">Comercio</h1>
+        <span class="etiqueta" th:classappend="'estado-' + ${#strings.toLowerCase(c.estado)}"
+              th:text="${c.estado.name() == 'ACTIVO'} ? 'Activo' : (${c.estado.name() == 'SUSPENDIDO'} ? 'Suspendido' : 'Dado de baja')">Activo</span>
+    </div>
+    <p class="suave">
+        <span th:text="${c.rubro.etiqueta}">Restaurante</span> ·
+        <a th:href="${urlSitio}" target="_blank" rel="noopener" th:text="${urlSitio}">sitio</a> ·
+        <span th:text="|${detalle.productos} productos|">0 productos</span> ·
+        <span th:text="|alta ${#temporals.format(c.fechaAlta, 'dd/MM/yyyy')}|">alta</span>
+    </p>
+
+    <section class="bloque">
+        <h2>Abono</h2>
+        <p class="abono" th:classappend="'abono-' + ${#strings.toLowerCase(detalle.abono.nivel)}">
+            <span th:text="${detalle.abono.texto}">Vence en 5 días</span>
+            <span th:if="${c.vencimientoAbono}" class="suave"
+                  th:text="|(${#temporals.format(c.vencimientoAbono, 'dd/MM/yyyy')})|">(fecha)</span>
+        </p>
+        <form th:unless="${c.estado.name() == 'BAJA'}" th:action="@{/superadmin/comercios/{id}/pago(id=${c.id})}" method="post">
+            <button type="submit" class="boton boton--principal">Registrar pago de un mes</button>
+        </form>
+        <small class="ayuda">Suma un mes desde el vencimiento (o desde hoy si ya venció) y, si estaba suspendido, lo reactiva.</small>
+    </section>
+
+    <section class="bloque">
+        <h2>Estado del sitio</h2>
+        <p class="suave" th:switch="${c.estado.name()}">
+            <span th:case="'ACTIVO'">El sitio está visible y el dueño puede editarlo.</span>
+            <span th:case="'SUSPENDIDO'">El sitio muestra "no disponible" y el panel está en solo lectura.</span>
+            <span th:case="*">El sitio no existe y el dueño no puede entrar. Los datos se conservan.</span>
+        </p>
+        <div class="acciones">
+            <form th:if="${c.estado.name() == 'ACTIVO'}" th:action="@{/superadmin/comercios/{id}/suspender(id=${c.id})}"
+                  method="post" onsubmit="return confirm('¿Suspender el sitio? Dejará de verse hasta que lo reactives.')">
+                <button type="submit" class="boton boton--secundario">Suspender por falta de pago</button>
+            </form>
+            <form th:unless="${c.estado.name() == 'ACTIVO'}" th:action="@{/superadmin/comercios/{id}/reactivar(id=${c.id})}" method="post">
+                <button type="submit" class="boton boton--principal">Reactivar</button>
+            </form>
+            <form th:unless="${c.estado.name() == 'BAJA'}" th:action="@{/superadmin/comercios/{id}/baja(id=${c.id})}"
+                  method="post" onsubmit="return confirm('¿Dar de baja este comercio? El sitio y el panel dejan de funcionar.')">
+                <button type="submit" class="boton boton--peligro">Dar de baja</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="bloque">
+        <h2>Usuarios</h2>
+        <ul class="lista-usuarios">
+            <li th:each="u : ${detalle.usuarios}" class="fila-usuario">
+                <div>
+                    <strong th:text="${u.nombre}">Nombre</strong>
+                    <span class="suave" th:text="${u.email}">email</span>
+                    <span th:if="${u.debeCambiarPassword}" class="etiqueta etiqueta--gris">contraseña temporal</span>
+                </div>
+                <form th:action="@{/superadmin/comercios/{id}/usuarios/{u}/contrasena(id=${c.id},u=${u.id})}" method="post"
+                      onsubmit="return confirm('¿Generar una contraseña temporal nueva? La actual deja de funcionar.')">
+                    <button type="submit" class="boton boton--chico boton--secundario">Nueva contraseña</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+
+    <section class="bloque">
+        <h2>Módulos contratados</h2>
+        <form th:action="@{/superadmin/comercios/{id}/modulos(id=${c.id})}" method="post" class="formulario">
+            <label th:each="m : ${modulos}" class="opcion">
+                <input type="checkbox" name="modulo" th:value="${m}" th:checked="${c.tieneModulo(m)}">
+                <span th:text="${m.etiqueta}">Módulo</span>
+            </label>
+            <label class="campo">
+                <span>Dominio propio (si contrató el módulo)</span>
+                <input name="dominioPropio" th:value="${c.dominioPropio}" placeholder="www.tucomercio.com.ar">
+            </label>
+            <button type="submit" class="boton boton--secundario">Guardar módulos</button>
+        </form>
+    </section>
+
+    <section class="bloque">
+        <h2>Notas internas</h2>
+        <form th:action="@{/superadmin/comercios/{id}/notas(id=${c.id})}" method="post" class="formulario">
+            <label class="campo">
+                <span class="visualmente-oculto">Notas</span>
+                <textarea name="notas" rows="3" maxlength="2000" th:text="${c.notasInternas}"
+                          placeholder="Ej.: paga por transferencia los días 10; contacto: Marta"></textarea>
+            </label>
+            <button type="submit" class="boton boton--secundario">Guardar notas</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>
