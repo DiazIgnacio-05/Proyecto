@@ -148,6 +148,64 @@ class PedidoControllerTest extends PruebaDeIntegracion {
         return post("/pedido").header("Host", "sabores-del-valle.localhost");
     }
 
+    @Test
+    void enLaTiendaDeRopaElMensajeIncluyeTalleYColor() throws Exception {
+        String destino = mvc.perform(post("/pedido").header("Host", "nogal.localhost")
+                        .param("lineas[0].productoId", String.valueOf(nogal.get("Remera básica de algodón")))
+                        .param("lineas[0].varianteId", variante("Remera básica de algodón", "talle M, Negro"))
+                        .param("lineas[0].cantidad", "2")
+                        .param("lineas[1].productoId", String.valueOf(nogal.get("Remera básica de algodón")))
+                        .param("lineas[1].varianteId", variante("Remera básica de algodón", "talle S, Blanco"))
+                        .param("lineas[1].cantidad", "1")
+                        .param("modalidad", "RETIRO")
+                        .param("nombre", "Ana"))
+                .andExpect(status().isSeeOther())
+                .andReturn().getResponse().getRedirectedUrl();
+        assertThat(mensaje(destino))
+                .contains("• 2 x Remera básica de algodón (talle M, Negro) — $ 28.000")
+                .contains("• 1 x Remera básica de algodón (talle S, Blanco) — $ 14.000")
+                .contains("*Total: $ 42.000*");
+    }
+
+    @Test
+    void rechazaTallesAgotadosOFaltantesYVariantesDeOtroProducto() throws Exception {
+        String remera = String.valueOf(nogal.get("Remera básica de algodón"));
+        mvc.perform(post("/pedido").header("Host", "nogal.localhost")
+                        .param("lineas[0].productoId", remera)
+                        .param("lineas[0].varianteId", variante("Remera básica de algodón", "talle L, Blanco"))
+                        .param("lineas[0].cantidad", "1").param("modalidad", "RETIRO").param("nombre", "Ana"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("ese talle o color ya no está disponible")));
+
+        mvc.perform(post("/pedido").header("Host", "nogal.localhost")
+                        .param("lineas[0].productoId", remera)
+                        .param("lineas[0].cantidad", "1").param("modalidad", "RETIRO").param("nombre", "Ana"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Elegí talle o color")));
+
+        mvc.perform(post("/pedido").header("Host", "nogal.localhost")
+                        .param("lineas[0].productoId", remera)
+                        .param("lineas[0].varianteId", variante("Jean recto", "talle 40, Azul"))
+                        .param("lineas[0].cantidad", "1").param("modalidad", "RETIRO").param("nombre", "Ana"))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(post("/pedido").header("Host", "nogal.localhost")
+                        .param("lineas[0].productoId", String.valueOf(nogal.get("Medias pack x3")))
+                        .param("lineas[0].varianteId", variante("Jean recto", "talle 40, Azul"))
+                        .param("lineas[0].cantidad", "1").param("modalidad", "RETIRO").param("nombre", "Ana"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("no tiene talles ni colores")));
+    }
+
+    private String variante(String producto, String etiqueta) {
+        Long comercioId = comercios.findBySlug("nogal").orElseThrow().getId();
+        return TenantContext.ejecutarComo(comercioId, () -> productos.findAllConVariantes().stream()
+                .filter(p -> p.getNombre().equals(producto))
+                .flatMap(p -> p.getVariantes().stream())
+                .filter(v -> v.etiqueta().equals(etiqueta))
+                .findFirst().orElseThrow().getId().toString());
+    }
+
     private String id(String nombre) {
         return String.valueOf(sabores.get(nombre));
     }

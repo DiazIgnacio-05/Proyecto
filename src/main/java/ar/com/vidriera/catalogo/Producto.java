@@ -87,10 +87,38 @@ public class Producto extends EntidadDelComercio {
         });
     }
 
+    public static final int VARIANTES_MAXIMAS = 60;
+
     public Variante agregarVariante(String talle, String color) {
+        if (variantes.size() >= VARIANTES_MAXIMAS) {
+            throw new IllegalStateException("Un producto puede tener hasta " + VARIANTES_MAXIMAS + " variantes");
+        }
         Variante variante = new Variante(this, talle, color);
         variantes.add(variante);
         return variante;
+    }
+
+    /** Agrega la combinación talle/color si todavía no existe. Devuelve si la agregó. */
+    public boolean agregarVarianteSiNoExiste(String talle, String color) {
+        if (variantes.stream().anyMatch(v -> v.esCombinacion(talle, color))) {
+            return false;
+        }
+        agregarVariante(talle, color);
+        return true;
+    }
+
+    public Optional<Variante> buscarVariante(Long varianteId) {
+        return variantes.stream().filter(v -> v.getId() != null && v.getId().equals(varianteId)).findFirst();
+    }
+
+    public Optional<Variante> quitarVariante(Long varianteId) {
+        Optional<Variante> variante = buscarVariante(varianteId);
+        variante.ifPresent(variantes::remove);
+        return variante;
+    }
+
+    public boolean tieneVariantes() {
+        return !variantes.isEmpty();
     }
 
     public Optional<ImagenProducto> getImagenPrincipal() {
