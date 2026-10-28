@@ -24,7 +24,7 @@ class FiltroComercioPorHostTest extends PruebaDeIntegracion {
         mvc.perform(get("/").header("Host", "nogal.localhost"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Nogal Indumentaria")))
-                .andExpect(content().string(containsString("8</span> productos")));
+                .andExpect(content().string(containsString("Remera básica de algodón")));
     }
 
     @Test

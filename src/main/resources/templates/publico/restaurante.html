@@ -3,28 +3,7 @@
 <head th:replace="~{fragments/head :: head(${meta}, ${comercio})}"></head>
 <body th:data-carrito="${comercio.slug}">
 
-<img th:if="${comercio.apariencia.portadaUrl}" th:src="${comercio.apariencia.portadaUrl}" alt=""
-     class="imagen-portada" width="1200" height="400" fetchpriority="high">
-<header class="portada">
-    <div class="contenedor">
-        <div class="marca">
-            <img th:if="${comercio.apariencia.logoUrl}" th:src="${comercio.apariencia.logoUrl}" alt=""
-                 class="marca__logo" width="64" height="64">
-            <span th:unless="${comercio.apariencia.logoUrl}" class="marca__inicial" aria-hidden="true"
-                  th:text="${#strings.substring(comercio.nombre, 0, 1)}">S</span>
-            <div>
-                <h1 class="marca__nombre" th:text="${comercio.nombre}">Comercio</h1>
-                <p th:if="${comercio.descripcion}" class="marca__descripcion" th:text="${comercio.descripcion}"></p>
-            </div>
-        </div>
-        <p th:if="${atencion.estado.isPresent()}" class="estado"
-           th:classappend="${atencion.estado.get().abierto} ? 'estado--abierto' : 'estado--cerrado'"
-           th:text="${atencion.estado.get().texto}">Abierto ahora</p>
-        <p th:if="${mesa}" class="aviso-mesa">
-            Estás en la <strong th:text="|mesa ${mesa}|">mesa 1</strong>. Elegí lo que quieras y enviá el pedido.
-        </p>
-    </div>
-</header>
+<th:block th:replace="~{fragments/sitio :: cabecera}"></th:block>
 
 <nav class="categorias" aria-label="Secciones del menú">
     <div class="contenedor categorias__lista">
@@ -62,123 +41,9 @@
         </ul>
     </section>
 
-    <section id="info" class="seccion info">
-        <h2 class="seccion__titulo">Horarios y contacto</h2>
-
-        <div class="info__bloque" th:if="${atencion.estado.isPresent()}">
-            <h3>Horarios</h3>
-            <table class="horarios">
-                <tr th:each="dia : ${atencion.semana}" th:classappend="${dia.hoy} ? 'horarios__hoy'">
-                    <th scope="row" th:text="${dia.nombre}">Lunes</th>
-                    <td th:text="${dia.horario}">Cerrado</td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="info__bloque" th:if="${comercio.contacto.direccion}">
-            <h3>Dónde estamos</h3>
-            <p th:text="${comercio.contacto.direccion}">Dirección</p>
-            <th:block th:if="${comercio.contacto.tieneUbicacion()}"
-                      th:with="lat=${comercio.contacto.latitud}, lng=${comercio.contacto.longitud}">
-                <iframe class="mapa" loading="lazy" title="Mapa de ubicación"
-                        th:src="|https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.006},${lat - 0.004},${lng + 0.006},${lat + 0.004}&layer=mapnik&marker=${lat},${lng}|"></iframe>
-                <a class="boton boton--secundario" target="_blank" rel="noopener"
-                   th:href="|https://www.google.com/maps/search/?api=1&query=${lat},${lng}|">Cómo llegar</a>
-            </th:block>
-        </div>
-
-        <div class="info__bloque">
-            <h3>Contacto</h3>
-            <ul class="contacto">
-                <li th:if="${whatsapp}"><a th:href="${whatsapp.link()}" target="_blank" rel="noopener">WhatsApp</a></li>
-                <li th:if="${comercio.contacto.telefono}">
-                    <a th:href="|tel:${#strings.replace(comercio.contacto.telefono, ' ', '')}|"
-                       th:text="|Teléfono ${comercio.contacto.telefono}|">Teléfono</a>
-                </li>
-                <li th:if="${comercio.contacto.email}">
-                    <a th:href="|mailto:${comercio.contacto.email}|" th:text="${comercio.contacto.email}">Email</a>
-                </li>
-                <li th:if="${comercio.redes.urlInstagram()}">
-                    <a th:href="${comercio.redes.urlInstagram()}" target="_blank" rel="noopener">Instagram</a>
-                </li>
-                <li th:if="${comercio.redes.urlFacebook()}">
-                    <a th:href="${comercio.redes.urlFacebook()}" target="_blank" rel="noopener">Facebook</a>
-                </li>
-                <li th:if="${comercio.redes.urlTiktok()}">
-                    <a th:href="${comercio.redes.urlTiktok()}" target="_blank" rel="noopener">TikTok</a>
-                </li>
-            </ul>
-        </div>
-    </section>
+    <section th:replace="~{fragments/sitio :: info}"></section>
 </main>
 
-<footer class="pie">
-    <div class="contenedor">
-        <p>Precios en pesos argentinos. El comercio confirma tu pedido por WhatsApp.</p>
-        <p class="pie__marca">Sitio hecho con Vidriera</p>
-    </div>
-</footer>
-
-<noscript>
-    <p class="aviso-sin-js">Para armar el pedido activá JavaScript, o escribinos directo por
-        <a th:if="${whatsapp}" th:href="${whatsapp.link()}">WhatsApp</a>.</p>
-</noscript>
-
-<!--/* Barra fija con el resumen del pedido: la muestra carrito.js cuando hay productos. */-->
-<div class="barra-pedido" data-barra-pedido hidden>
-    <button type="button" class="boton boton--principal barra-pedido__boton" data-accion="abrir-pedido">
-        <span>Ver pedido <span data-resumen></span></span>
-        <strong data-total>$ 0</strong>
-    </button>
-</div>
-
-<dialog class="pedido" data-dialogo-pedido aria-labelledby="titulo-pedido">
-    <!--/* action plano (sin th:action) a propósito: así no se genera token CSRF ni sesión; ver SeguridadConfig. */-->
-    <form method="post" action="/pedido" class="pedido__form" data-form-pedido>
-        <div class="pedido__encabezado">
-            <h2 id="titulo-pedido">Tu pedido</h2>
-            <button type="button" class="boton-cerrar" data-accion="cerrar-pedido" aria-label="Cerrar">×</button>
-        </div>
-
-        <ul class="pedido__lineas" data-lineas></ul>
-        <p class="pedido__total">Total <strong data-total>$ 0</strong></p>
-
-        <fieldset class="pedido__modalidad">
-            <legend>¿Cómo lo recibís?</legend>
-            <label th:if="${mesa}" class="opcion">
-                <input type="radio" name="modalidad" value="MESA" checked>
-                <span th:text="|En la mesa ${mesa}|">En la mesa</span>
-            </label>
-            <label class="opcion">
-                <input type="radio" name="modalidad" value="RETIRO" th:checked="${mesa == null}">
-                <span>Retiro en el local</span>
-            </label>
-            <label th:if="${comercio.ofreceEnvio}" class="opcion">
-                <input type="radio" name="modalidad" value="ENVIO">
-                <span>Envío a domicilio</span>
-            </label>
-        </fieldset>
-        <input th:if="${mesa}" type="hidden" name="mesa" th:value="${mesa}">
-
-        <label class="campo">
-            <span>Tu nombre</span>
-            <input name="nombre" maxlength="80" autocomplete="name" data-nombre>
-        </label>
-        <label class="campo" data-solo-envio hidden>
-            <span>Dirección de entrega</span>
-            <input name="direccion" maxlength="200" autocomplete="street-address" data-direccion>
-        </label>
-        <label class="campo">
-            <span>Comentario (opcional)</span>
-            <textarea name="comentario" maxlength="300" rows="2" placeholder="Ej.: sin cebolla, con cambio de $ 20.000"></textarea>
-        </label>
-
-        <div data-campos-lineas></div>
-        <button type="submit" class="boton boton--whatsapp">Enviar pedido por WhatsApp</button>
-        <p class="pedido__nota">Se abre WhatsApp con el pedido escrito. El comercio te confirma el total y la demora.</p>
-    </form>
-</dialog>
-
-<script th:src="@{/js/carrito.js}" defer></script>
+<th:block th:replace="~{fragments/sitio :: pedido}"></th:block>
 </body>
 </html>

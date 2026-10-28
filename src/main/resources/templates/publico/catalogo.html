@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head(${meta}, ${comercio})}"></head>
+<!--/* Catálogo para tiendas de ropa y venta de artículos: grilla, buscador, filtros y talles/colores. */-->
+<body th:data-carrito="${comercio.slug}">
+
+<th:block th:replace="~{fragments/sitio :: cabecera}"></th:block>
+
+<div class="buscador-catalogo">
+    <div class="contenedor">
+        <!--/* Formulario GET común: funciona sin JavaScript y el resultado se puede compartir como link. */-->
+        <form action="/" method="get" role="search" class="buscador">
+            <label for="buscar" class="visualmente-oculto">Buscar productos</label>
+            <input id="buscar" type="search" name="q" th:value="${q}" maxlength="80"
+                   placeholder="Buscar productos..." autocomplete="off" enterkeyhint="search">
+            <input th:if="${categoriaId}" type="hidden" name="categoria" th:value="${categoriaId}">
+            <button type="submit" class="boton boton--principal">Buscar</button>
+        </form>
+        <nav class="categorias__lista filtros" aria-label="Filtrar por categoría">
+            <a th:href="@{/(q=${q})}" class="chip" th:classappend="${categoriaId == null} ? 'chip--activo'"
+               th:attr="aria-current=${categoriaId == null} ? 'page' : null">Todo</a>
+            <a th:each="s : ${todas}" th:href="@{/(q=${q},categoria=${s.id})}" class="chip"
+               th:classappend="${s.id == categoriaId} ? 'chip--activo'"
+               th:attr="aria-current=${s.id == categoriaId} ? 'page' : null"
+               th:text="${s.nombre}">Categoría</a>
+        </nav>
+    </div>
+</div>
+
+<main class="contenedor">
+    <p th:if="${todas.isEmpty()}" class="vacio">Pronto vas a ver los productos acá.</p>
+
+    <div th:if="${q != null and !todas.isEmpty()}" class="resultado-busqueda" role="status">
+        <span th:text="${busqueda.cantidad == 1} ? |1 resultado para “${q}”| : |${busqueda.cantidad} resultados para “${q}”|">
+            3 resultados
+        </span>
+        <a th:href="@{/(categoria=${categoriaId})}">Borrar búsqueda</a>
+    </div>
+    <p th:if="${busqueda.cantidad == 0 and !todas.isEmpty()}" class="vacio">
+        No encontramos productos. Probá con otra palabra o
+        <a th:if="${whatsapp}" th:href="${whatsapp.link()}" target="_blank" rel="noopener">consultanos por WhatsApp</a>.
+    </p>
+
+    <section th:each="seccion : ${busqueda.secciones}" class="seccion">
+        <h2 class="seccion__titulo" th:text="${seccion.nombre}">Categoría</h2>
+        <ul class="grilla">
+            <li th:each="p : ${seccion.productos}" class="producto tarjeta-producto"
+                th:classappend="${!p.sePuedePedir} ? 'producto--agotado'"
+                th:attr="data-id=${p.id},data-nombre=${p.nombre},data-precio=${p.precio},data-pedible=${p.sePuedePedir}">
+                <img th:if="${p.imagenUrl}" th:src="${p.imagenUrl}" alt="" class="tarjeta-producto__foto"
+                     width="480" height="480" loading="lazy" decoding="async">
+                <div th:unless="${p.imagenUrl}" class="tarjeta-producto__foto tarjeta-producto__foto--vacia" aria-hidden="true"
+                     th:text="${#strings.substring(p.nombre, 0, 1)}">R</div>
+                <div class="tarjeta-producto__cuerpo">
+                    <h3 class="producto__nombre">
+                        <span th:text="${p.nombre}">Producto</span>
+                        <span th:if="${p.destacado}" class="etiqueta">Destacado</span>
+                    </h3>
+                    <p th:if="${p.descripcion}" class="producto__descripcion" th:text="${p.descripcion}"></p>
+                    <p class="producto__precio" th:text="${@pesos.de(p.precio)}">$ 0</p>
+
+                    <label th:if="${p.sePuedePedir and p.tieneVariantes()}" class="variante">
+                        <span class="visualmente-oculto" th:text="|Talle y color de ${p.nombre}|">Talle y color</span>
+                        <select data-variante required>
+                            <option value="" th:text="${p.textoEleccion}">Elegí talle</option>
+                            <option th:each="v : ${p.variantes}" th:value="${v.id}" th:disabled="${!v.disponible}"
+                                    th:text="${v.disponible} ? ${v.etiqueta} : |${v.etiqueta} (sin stock)|">talle M</option>
+                        </select>
+                    </label>
+
+                    <div class="producto__accion" data-accion-producto>
+                        <span th:unless="${p.sePuedePedir}" class="etiqueta etiqueta--agotado">Sin stock</span>
+                        <button th:if="${p.sePuedePedir}" type="button" class="boton boton--agregar"
+                                data-accion="sumar" th:aria-label="|Agregar ${p.nombre}|">Agregar</button>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </section>
+
+    <section th:replace="~{fragments/sitio :: info}"></section>
+</main>
+
+<th:block th:replace="~{fragments/sitio :: pedido}"></th:block>
+</body>
+</html>
