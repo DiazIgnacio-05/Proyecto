@@ -41,6 +41,9 @@ public class PedidoForm {
         @NotNull
         private Long productoId;
 
+        /** Talle/color elegido; solo para productos con variantes. */
+        private Long varianteId;
+
         @Min(value = 1, message = "La cantidad mínima es 1")
         @Max(value = LineaPedido.CANTIDAD_MAXIMA, message = "La cantidad máxima es 99")
         private int cantidad;
@@ -51,6 +54,14 @@ public class PedidoForm {
         public Linea(Long productoId, int cantidad) {
             this.productoId = productoId;
             this.cantidad = cantidad;
+        }
+
+        public Long getVarianteId() {
+            return varianteId;
+        }
+
+        public void setVarianteId(Long varianteId) {
+            this.varianteId = varianteId;
         }
 
         public Long getProductoId() {

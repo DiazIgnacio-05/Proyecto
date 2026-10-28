@@ -108,6 +108,30 @@ class ProductosAdminController {
         return "redirect:/admin/productos/" + id + "#fotos";
     }
 
+    @PostMapping("/{id}/variantes")
+    String agregarVariantes(@PathVariable Long id, @RequestParam(defaultValue = "") String talles,
+            @RequestParam(defaultValue = "") String colores, RedirectAttributes flash) {
+        int agregadas = productos.agregarVariantes(id, talles, colores);
+        flash.addFlashAttribute("ok", agregadas == 0
+                ? "Esas combinaciones ya estaban cargadas"
+                : agregadas == 1 ? "Se agregó 1 combinación" : "Se agregaron " + agregadas + " combinaciones");
+        return "redirect:/admin/productos/" + id + "#variantes";
+    }
+
+    @PostMapping("/{id}/variantes/{varianteId}/disponible")
+    String cambiarVariante(@PathVariable Long id, @PathVariable Long varianteId, RedirectAttributes flash) {
+        boolean disponible = productos.cambiarVariante(id, varianteId);
+        flash.addFlashAttribute("ok", disponible ? "Disponible otra vez" : "Marcado sin stock");
+        return "redirect:/admin/productos/" + id + "#variantes";
+    }
+
+    @PostMapping("/{id}/variantes/{varianteId}/eliminar")
+    String quitarVariante(@PathVariable Long id, @PathVariable Long varianteId, RedirectAttributes flash) {
+        productos.quitarVariante(id, varianteId);
+        flash.addFlashAttribute("ok", "Combinación eliminada");
+        return "redirect:/admin/productos/" + id + "#variantes";
+    }
+
     private String guardar(ProductoForm form, BindingResult errores, Model model, RedirectAttributes flash) {
         if (!errores.hasErrors()) {
             try {
@@ -125,6 +149,7 @@ class ProductosAdminController {
         model.addAttribute("form", form);
         model.addAttribute("categorias", categorias.paraElegir());
         model.addAttribute("fotos", form.esNuevo() ? java.util.List.of() : productos.fotos(form.getId()));
+        model.addAttribute("variantes", form.esNuevo() ? java.util.List.of() : productos.variantes(form.getId()));
         model.addAttribute("fotosMaximas", ProductoAdminService.FOTOS_MAXIMAS);
         return "admin/productos/formulario";
     }

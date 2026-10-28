@@ -1,6 +1,9 @@
 package ar.com.vidriera.admin;
 
 import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,6 +16,7 @@ import ar.com.vidriera.catalogo.CategoriaRepository;
 import ar.com.vidriera.catalogo.ImagenProducto;
 import ar.com.vidriera.catalogo.Producto;
 import ar.com.vidriera.catalogo.ProductoRepository;
+import ar.com.vidriera.catalogo.Variante;
 import ar.com.vidriera.comun.LectorPesos;
 import ar.com.vidriera.imagen.ServicioImagenes;
 import ar.com.vidriera.imagen.TamanoImagen;
@@ -23,8 +27,15 @@ public class ProductoAdminService {
 
     static final int FOTOS_MAXIMAS = 5;
 
+    /**
+     * @param variantes          cantidad de talles/colores cargados (0 si no tiene)
+     * @param variantesConStock  cuántos de ellos están disponibles
+     */
     public record ProductoFila(Long id, String nombre, BigDecimal precio, boolean disponible,
-            boolean destacado, String imagenUrl) {
+            boolean destacado, String imagenUrl, int variantes, int variantesConStock) {
+    }
+
+    public record VarianteFila(Long id, String etiqueta, boolean disponible) {
     }
 
     public record Seccion(Long id, String nombre, boolean activa, List<ProductoFila> productos) {
@@ -139,15 +150,88 @@ public class ProductoAdminService {
         buscar(id).hacerPrincipal(fotoId);
     }
 
+    @Transactional(readOnly = true)
+    public List<VarianteFila> variantes(Long id) {
+        return buscar(id).getVariantes().stream()
+                .sorted(Comparator.comparing(Variante::getId))
+                .map(v -> new VarianteFila(v.getId(), v.etiqueta(), v.isDisponible()))
+                .toList();
+    }
+
+    /**
+     * Crea todas las combinaciones de los talles y colores escritos ("S, M, L" y "Negro, Blanco"
+     * → 6 variantes). Las que ya existen se saltean. Devuelve cuántas se agregaron.
+     */
+    @Transactional
+    public int agregarVariantes(Long id, String talles, String colores) {
+        List<String> listaTalles = lista(talles, 20, "talle");
+        List<String> listaColores = lista(colores, 30, "color");
+        if (listaTalles.isEmpty() && listaColores.isEmpty()) {
+            throw new OperacionRechazadaException("Escribí al menos un talle o un color");
+        }
+        Producto producto = buscar(id);
+        List<String> ts = listaTalles.isEmpty() ? Collections.singletonList(null) : listaTalles;
+        List<String> cs = listaColores.isEmpty() ? Collections.singletonList(null) : listaColores;
+        if (producto.getVariantes().size() + ts.size() * cs.size() > Producto.VARIANTES_MAXIMAS) {
+            throw new OperacionRechazadaException(
+                    "Son demasiadas combinaciones: un producto puede tener hasta " + Producto.VARIANTES_MAXIMAS);
+        }
+        int agregadas = 0;
+        for (String talle : ts) {
+            for (String color : cs) {
+                if (producto.agregarVarianteSiNoExiste(talle, color)) {
+                    agregadas++;
+                }
+            }
+        }
+        return agregadas;
+    }
+
+    /** Marca o desmarca "sin stock" un talle/color puntual. */
+    @Transactional
+    public boolean cambiarVariante(Long id, Long varianteId) {
+        Variante variante = buscar(id).buscarVariante(varianteId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Variante"));
+        variante.setDisponible(!variante.isDisponible());
+        return variante.isDisponible();
+    }
+
+    @Transactional
+    public void quitarVariante(Long id, Long varianteId) {
+        buscar(id).quitarVariante(varianteId).orElseThrow(() -> new RecursoNoEncontradoException("Variante"));
+    }
+
     private Producto buscar(Long id) {
         return productos.findById(id).orElseThrow(() -> new RecursoNoEncontradoException("Producto"));
+    }
+
+    /** "S, M ,  L" → [S, M, L], sin repetidos (sin importar mayúsculas). */
+    static List<String> lista(String texto, int largoMaximo, String que) {
+        if (texto == null || texto.isBlank()) {
+            return List.of();
+        }
+        Map<String, String> unicos = new LinkedHashMap<>();
+        for (String parte : texto.split("[,;]")) {
+            String limpio = parte.strip().replaceAll("\\s+", " ");
+            if (limpio.isEmpty()) {
+                continue;
+            }
+            if (limpio.length() > largoMaximo) {
+                throw new OperacionRechazadaException(
+                        "El " + que + " \"" + limpio + "\" es demasiado largo (máx. " + largoMaximo + ")");
+            }
+            unicos.putIfAbsent(limpio.toLowerCase(), limpio);
+        }
+        return List.copyOf(unicos.values());
     }
 
     private ProductoFila aFila(Producto p) {
         String imagen = p.getImagenPrincipal()
                 .map(i -> imagenes.urlFoto(i.getClave(), TamanoImagen.CHICA))
                 .orElse(null);
-        return new ProductoFila(p.getId(), p.getNombre(), p.getPrecio(), p.isDisponible(), p.isDestacado(), imagen);
+        int conStock = (int) p.getVariantes().stream().filter(Variante::isDisponible).count();
+        return new ProductoFila(p.getId(), p.getNombre(), p.getPrecio(), p.isDisponible(), p.isDestacado(), imagen,
+                p.getVariantes().size(), conStock);
     }
 
     private static String textoOpcional(String texto) {

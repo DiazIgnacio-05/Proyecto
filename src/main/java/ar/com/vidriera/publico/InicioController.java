@@ -1,5 +1,6 @@
 package ar.com.vidriera.publico;
 
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,13 +17,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import ar.com.vidriera.catalogo.CatalogoService;
 import ar.com.vidriera.comercio.AtencionService;
 import ar.com.vidriera.comercio.Comercio;
-import ar.com.vidriera.comercio.Rubro;
 import ar.com.vidriera.pedido.NumeroWhatsApp;
 import ar.com.vidriera.tenant.FiltroComercioPorHost;
 
 /**
  * Página de inicio: en el dominio de la plataforma, la landing; en el subdominio de un comercio,
- * su sitio público (por ahora el menú del restaurante; los otros rubros llegan en la Etapa 4).
+ * su sitio público: el menú (restaurante) o el catálogo con buscador (ropa y artículos).
  */
 @Controller
 public class InicioController {
@@ -39,6 +39,8 @@ public class InicioController {
     public String inicio(
             @RequestAttribute(name = FiltroComercioPorHost.ATRIBUTO_COMERCIO, required = false) Comercio comercio,
             @RequestParam(name = "mesa", required = false) String mesa,
+            @RequestParam(name = "q", required = false) String busqueda,
+            @RequestParam(name = "categoria", required = false) String categoria,
             Model model, HttpServletResponse response) {
 
         if (comercio == null) {
@@ -54,19 +56,43 @@ public class InicioController {
             case ACTIVO -> {
             }
         }
-        if (comercio.getRubro() != Rubro.RESTAURANTE) {
-            model.addAttribute("cantidadProductos",
-                    catalogo.secciones().stream().mapToLong(s -> s.productos().size()).sum());
-            return "publico/en-construccion";
-        }
-
         String urlBase = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        List<CatalogoService.Seccion> secciones = catalogo.secciones();
         model.addAttribute("meta", MetadatosPagina.de(comercio, urlBase));
-        model.addAttribute("secciones", catalogo.secciones());
         model.addAttribute("atencion", atencion.infoActual());
         model.addAttribute("mesa", mesaValida(comercio, mesa).orElse(null));
         model.addAttribute("whatsapp", whatsapp(comercio).orElse(null));
-        return "publico/restaurante";
+
+        // El restaurante muestra el menú completo; los rubros con buscador, la grilla filtrable.
+        if (!comercio.getRubro().usaBuscador()) {
+            model.addAttribute("secciones", secciones);
+            return "publico/restaurante";
+        }
+        String texto = textoBuscado(busqueda);
+        Long categoriaId = categoriaValida(secciones, categoria);
+        model.addAttribute("todas", secciones);
+        model.addAttribute("q", texto);
+        model.addAttribute("categoriaId", categoriaId);
+        model.addAttribute("busqueda", CatalogoService.filtrar(secciones, texto, categoriaId));
+        return "publico/catalogo";
+    }
+
+    /** null si no se buscó nada (o solo espacios). */
+    static String textoBuscado(String busqueda) {
+        if (busqueda == null || busqueda.isBlank()) {
+            return null;
+        }
+        String limpio = busqueda.strip();
+        return limpio.length() > 80 ? limpio.substring(0, 80) : limpio;
+    }
+
+    /** La categoría del filtro tiene que ser una de las visibles de este comercio; si no, se ignora. */
+    static Long categoriaValida(List<CatalogoService.Seccion> secciones, String categoria) {
+        if (categoria == null || !categoria.matches("\\d{1,18}")) {
+            return null;
+        }
+        Long id = Long.valueOf(categoria);
+        return secciones.stream().anyMatch(s -> s.id().equals(id)) ? id : null;
     }
 
     /** El número de mesa viene del QR; si no es válido para este comercio se ignora. */

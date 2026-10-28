@@ -87,6 +87,48 @@
         </form>
     </section>
 
+    <section th:if="${!form.esNuevo() and comercio.rubro.usaVariantes()}" id="variantes" class="bloque">
+        <h2>Talles y colores</h2>
+        <p class="suave">
+            El cliente elige uno al pedir. Si un talle o color se agota, marcalo "sin stock" y deja de
+            ofrecerse. Si no cargás ninguno, el producto se pide sin elegir.
+        </p>
+
+        <ul th:unless="${variantes.isEmpty()}" class="lista-variantes">
+            <li th:each="v : ${variantes}" class="fila-variante" th:classappend="${!v.disponible} ? 'fila-variante--agotada'">
+                <span class="fila-variante__nombre">
+                    <span th:text="${v.etiqueta}">talle M, Negro</span>
+                    <span th:unless="${v.disponible}" class="etiqueta etiqueta--alerta">Sin stock</span>
+                </span>
+                <form method="post" th:action="@{/admin/productos/{id}/variantes/{v}/disponible(id=${form.id},v=${v.id})}">
+                    <button type="submit" class="boton boton--chico boton--secundario"
+                            th:text="${v.disponible} ? 'Marcar sin stock' : 'Marcar disponible'">Marcar sin stock</button>
+                </form>
+                <form method="post" th:action="@{/admin/productos/{id}/variantes/{v}/eliminar(id=${form.id},v=${v.id})}"
+                      onsubmit="return confirm('¿Eliminar esta combinación?')">
+                    <button type="submit" class="boton boton--chico boton--peligro" th:aria-label="|Eliminar ${v.etiqueta}|">×</button>
+                </form>
+            </li>
+        </ul>
+
+        <form method="post" th:action="@{/admin/productos/{id}/variantes(id=${form.id})}" class="formulario">
+            <h3>Agregar</h3>
+            <div class="fila-campos">
+                <label class="campo">
+                    <span>Talles</span>
+                    <input name="talles" placeholder="Ej.: S, M, L, XL">
+                </label>
+                <label class="campo">
+                    <span>Colores</span>
+                    <input name="colores" placeholder="Ej.: Negro, Blanco">
+                </label>
+            </div>
+            <small class="ayuda">Separados por coma. Se crean todas las combinaciones (4 talles × 2 colores = 8).
+                Podés cargar solo talles o solo colores.</small>
+            <button type="submit" class="boton boton--secundario">Agregar combinaciones</button>
+        </form>
+    </section>
+
     <section th:unless="${form.esNuevo()}" class="bloque bloque--peligro">
         <h2>Eliminar producto</h2>
         <p class="suave">Si solo no lo tenés por ahora, mejor marcalo "sin stock".</p>

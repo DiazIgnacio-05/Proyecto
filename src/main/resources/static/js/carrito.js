@@ -2,6 +2,9 @@
  * Carrito del sitio público. Vive en el navegador (localStorage, una clave por comercio) y al
  * confirmar se envía un formulario común a /pedido con ids y cantidades. Los precios que se ven
  * acá son solo informativos: el servidor vuelve a calcular todo con los precios de la base.
+ *
+ * Cada renglón del carrito se identifica con una "clave": el id del producto ("12") o, si el
+ * producto tiene talles/colores, el id del producto y el de la variante ("12:340").
  */
 (() => {
     'use strict';
@@ -23,6 +26,7 @@
             nombre: elemento.dataset.nombre,
             precio: Number(elemento.dataset.precio),
             accion: elemento.querySelector('[data-accion-producto]'),
+            selector: elemento.querySelector('[data-variante]'),
         });
     });
 
@@ -30,12 +34,32 @@
     const barra = document.querySelector('[data-barra-pedido]');
     let carrito = leer();
 
+    /** "12:340" → { id: "12", variante: "340" }. */
+    function partes(clave) {
+        const [id, variante] = clave.split(':');
+        return { id, variante: variante || null };
+    }
+
+    /** Texto de la variante elegida, sin el aviso "(sin stock)". */
+    function etiquetaVariante(producto, variante) {
+        const opcion = producto.selector && [...producto.selector.options].find((o) => o.value === variante);
+        return opcion ? opcion.textContent.trim() : null;
+    }
+
+    function claveValida(clave, cantidad) {
+        const { id, variante } = partes(clave);
+        const producto = productos.get(id);
+        if (!producto || !Number.isInteger(cantidad) || cantidad <= 0) return false;
+        if (!producto.selector) return variante === null;
+        const opcion = [...producto.selector.options].find((o) => o.value === variante);
+        return Boolean(opcion && !opcion.disabled);
+    }
+
     function leer() {
         try {
             const guardado = JSON.parse(localStorage.getItem(CLAVE) || '{}');
-            // Se descartan productos que ya no existen o quedaron sin stock.
-            return Object.fromEntries(Object.entries(guardado)
-                .filter(([id, cantidad]) => productos.has(id) && Number.isInteger(cantidad) && cantidad > 0));
+            // Se descartan productos o talles que ya no existen o quedaron sin stock.
+            return Object.fromEntries(Object.entries(guardado).filter(([clave, cantidad]) => claveValida(clave, cantidad)));
         } catch {
             return {};
         }
@@ -49,12 +73,12 @@
         }
     }
 
-    function cambiar(id, delta) {
-        const cantidad = Math.min(MAXIMO, Math.max(0, (carrito[id] || 0) + delta));
+    function cambiar(clave, delta) {
+        const cantidad = Math.min(MAXIMO, Math.max(0, (carrito[clave] || 0) + delta));
         if (cantidad === 0) {
-            delete carrito[id];
+            delete carrito[clave];
         } else {
-            carrito[id] = cantidad;
+            carrito[clave] = cantidad;
         }
         guardar();
         dibujar();
@@ -73,43 +97,52 @@
         return control;
     }
 
-    function botonAgregar(nombre) {
+    function botonAgregar(nombre, enPedido) {
         const boton = document.createElement('button');
         boton.type = 'button';
         boton.className = 'boton boton--agregar';
         boton.dataset.accion = 'sumar';
         boton.setAttribute('aria-label', 'Agregar ' + nombre);
-        boton.textContent = 'Agregar';
+        boton.textContent = enPedido > 0 ? 'Agregar (' + enPedido + ' en el pedido)' : 'Agregar';
         return boton;
     }
 
     function dibujar() {
         let unidades = 0;
         let total = 0;
+        const enPedido = new Map(); // id de producto → unidades (sumando todos sus talles)
+
         const lineas = dialogo.querySelector('[data-lineas]');
         lineas.replaceChildren();
-
-        productos.forEach((producto, id) => {
-            const cantidad = carrito[id] || 0;
-            producto.accion.replaceChildren(cantidad > 0
-                ? controlDeCantidad(producto.nombre, cantidad)
-                : botonAgregar(producto.nombre));
-            if (cantidad === 0) return;
-
+        Object.entries(carrito).forEach(([clave, cantidad]) => {
+            const { id, variante } = partes(clave);
+            const producto = productos.get(id);
             unidades += cantidad;
             total += cantidad * producto.precio;
+            enPedido.set(id, (enPedido.get(id) || 0) + cantidad);
 
+            const nombreCompleto = variante
+                ? producto.nombre + ' (' + etiquetaVariante(producto, variante) + ')'
+                : producto.nombre;
             const linea = document.createElement('li');
             linea.className = 'linea';
-            linea.dataset.id = id;
+            linea.dataset.clave = clave;
             const nombre = document.createElement('span');
             nombre.className = 'linea__nombre';
-            nombre.textContent = producto.nombre;
+            nombre.textContent = nombreCompleto;
             const subtotal = document.createElement('span');
             subtotal.className = 'linea__subtotal';
             subtotal.textContent = pesos(cantidad * producto.precio);
-            linea.append(nombre, controlDeCantidad(producto.nombre, cantidad), subtotal);
+            linea.append(nombre, controlDeCantidad(nombreCompleto, cantidad), subtotal);
             lineas.append(linea);
+        });
+
+        // En la tarjeta: sin talles, el control de cantidad; con talles, "Agregar" (cada talle es otra línea).
+        productos.forEach((producto, id) => {
+            const cantidad = enPedido.get(id) || 0;
+            producto.accion.replaceChildren(!producto.selector && cantidad > 0
+                ? controlDeCantidad(producto.nombre, cantidad)
+                : botonAgregar(producto.nombre, producto.selector ? cantidad : 0));
         });
 
         document.querySelectorAll('[data-total]').forEach((el) => { el.textContent = pesos(total); });
@@ -117,6 +150,18 @@
             '(' + unidades + (unidades === 1 ? ' producto)' : ' productos)');
         barra.hidden = unidades === 0;
         if (unidades === 0 && dialogo.open) dialogo.close();
+    }
+
+    /** Clave del producto de una tarjeta; null si tiene talles y todavía no eligió uno. */
+    function claveDeTarjeta(id) {
+        const producto = productos.get(id);
+        if (!producto.selector) return id;
+        if (!producto.selector.value) {
+            producto.selector.setCustomValidity('Elegí un talle o color');
+            producto.selector.reportValidity();
+            return null;
+        }
+        return id + ':' + producto.selector.value;
     }
 
     function actualizarModalidad() {
@@ -134,12 +179,28 @@
         const accion = boton.dataset.accion;
         if (accion === 'abrir-pedido') {
             dialogo.showModal();
-        } else if (accion === 'cerrar-pedido') {
-            dialogo.close();
-        } else if (accion === 'sumar' || accion === 'restar') {
-            const id = boton.closest('[data-id]')?.dataset.id;
-            if (id && productos.has(id)) cambiar(id, accion === 'sumar' ? 1 : -1);
+            return;
         }
+        if (accion === 'cerrar-pedido') {
+            dialogo.close();
+            return;
+        }
+        if (accion !== 'sumar' && accion !== 'restar') return;
+        const delta = accion === 'sumar' ? 1 : -1;
+
+        const linea = boton.closest('[data-clave]');
+        if (linea) {
+            cambiar(linea.dataset.clave, delta);
+            return;
+        }
+        const id = boton.closest('.producto[data-id]')?.dataset.id;
+        if (!id || !productos.has(id)) return;
+        const clave = claveDeTarjeta(id);
+        if (clave) cambiar(clave, delta);
+    });
+
+    document.addEventListener('change', (evento) => {
+        if (evento.target.matches('[data-variante]')) evento.target.setCustomValidity('');
     });
 
     // Tocar fuera del diálogo (en el fondo oscuro) lo cierra.
@@ -152,16 +213,18 @@
     });
 
     formulario.addEventListener('submit', (evento) => {
-        const ids = Object.keys(carrito);
-        if (ids.length === 0) {
+        const claves = Object.keys(carrito);
+        if (claves.length === 0) {
             evento.preventDefault();
             return;
         }
         // Spring arma la lista "lineas" a partir de nombres como lineas[0].productoId.
         const campos = formulario.querySelector('[data-campos-lineas]');
         campos.replaceChildren();
-        ids.forEach((id, i) => {
-            campos.append(oculto('lineas[' + i + '].productoId', id), oculto('lineas[' + i + '].cantidad', carrito[id]));
+        claves.forEach((clave, i) => {
+            const { id, variante } = partes(clave);
+            campos.append(oculto('lineas[' + i + '].productoId', id), oculto('lineas[' + i + '].cantidad', carrito[clave]));
+            if (variante) campos.append(oculto('lineas[' + i + '].varianteId', variante));
         });
         carrito = {};
         guardar();

@@ -29,8 +29,29 @@ public class Variante extends EntidadDelComercio {
             throw new IllegalArgumentException("La variante necesita al menos talle o color");
         }
         this.producto = producto;
-        this.talle = talle;
-        this.color = color;
+        this.talle = limpiar(talle);
+        this.color = limpiar(color);
+    }
+
+    /** Texto para el cliente y para el mensaje de WhatsApp: "talle M, Negro". */
+    public String etiqueta() {
+        if (talle != null && color != null) {
+            return "talle " + talle + ", " + color;
+        }
+        return talle != null ? "talle " + talle : color;
+    }
+
+    /** Misma combinación de talle y color, sin importar mayúsculas. */
+    public boolean esCombinacion(String otroTalle, String otroColor) {
+        return iguales(talle, limpiar(otroTalle)) && iguales(color, limpiar(otroColor));
+    }
+
+    private static boolean iguales(String a, String b) {
+        return a == null ? b == null : a.equalsIgnoreCase(b);
+    }
+
+    private static String limpiar(String texto) {
+        return texto == null || texto.isBlank() ? null : texto.strip();
     }
 
     public Producto getProducto() {

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.com.vidriera.catalogo.Producto;
 import ar.com.vidriera.catalogo.ProductoRepository;
+import ar.com.vidriera.catalogo.Variante;
 import ar.com.vidriera.comercio.Comercio;
 
 /**
@@ -35,25 +36,49 @@ public class PedidoService {
                 .linkConMensaje(MensajeWhatsApp.de(pedido));
     }
 
+    /** Producto + variante elegida (talle/color); la variante es null si el producto no tiene. */
+    private record Eleccion(Long productoId, Long varianteId) {
+    }
+
     private List<LineaPedido> armarLineas(List<PedidoForm.Linea> lineasForm) {
-        // Si el mismo producto viene dos veces, se suman las cantidades (respetando el orden).
-        Map<Long, Integer> cantidades = new LinkedHashMap<>();
+        // Si la misma elección viene dos veces, se suman las cantidades (respetando el orden).
+        Map<Eleccion, Integer> cantidades = new LinkedHashMap<>();
         for (PedidoForm.Linea linea : lineasForm) {
-            cantidades.merge(linea.getProductoId(), linea.getCantidad(), Integer::sum);
+            cantidades.merge(new Eleccion(linea.getProductoId(), linea.getVarianteId()), linea.getCantidad(),
+                    Integer::sum);
         }
-        Map<Long, Producto> encontrados = productos.findAllById(cantidades.keySet()).stream()
+        List<Long> ids = cantidades.keySet().stream().map(Eleccion::productoId).distinct().toList();
+        Map<Long, Producto> encontrados = productos.findAllById(ids).stream()
                 .collect(Collectors.toMap(Producto::getId, Function.identity()));
 
         List<LineaPedido> lineas = new ArrayList<>();
-        cantidades.forEach((id, cantidad) -> {
-            Producto producto = encontrados.get(id);
+        cantidades.forEach((eleccion, cantidad) -> {
+            Producto producto = encontrados.get(eleccion.productoId());
             if (producto == null || !producto.sePuedePedir()) {
                 String nombre = producto == null ? "Un producto" : producto.getNombre();
                 throw new PedidoInvalidoException(nombre + " ya no está disponible. Revisá tu pedido.");
             }
-            lineas.add(new LineaPedido(producto.getNombre(), cantidad, producto.getPrecio()));
+            lineas.add(new LineaPedido(descripcion(producto, eleccion.varianteId()), cantidad, producto.getPrecio()));
         });
         return lineas;
+    }
+
+    /** Nombre del producto y, si tiene variantes, la elegida: "Remera básica (talle M, Negro)". */
+    private static String descripcion(Producto producto, Long varianteId) {
+        if (!producto.tieneVariantes()) {
+            if (varianteId != null) {
+                throw new PedidoInvalidoException(producto.getNombre() + " no tiene talles ni colores para elegir.");
+            }
+            return producto.getNombre();
+        }
+        if (varianteId == null) {
+            throw new PedidoInvalidoException("Elegí talle o color de " + producto.getNombre() + ".");
+        }
+        Variante variante = producto.buscarVariante(varianteId)
+                .filter(Variante::isDisponible)
+                .orElseThrow(() -> new PedidoInvalidoException(
+                        producto.getNombre() + ": ese talle o color ya no está disponible. Revisá tu pedido."));
+        return producto.getNombre() + " (" + variante.etiqueta() + ")";
     }
 
     private DatosEntrega entrega(Comercio comercio, PedidoForm form) {
