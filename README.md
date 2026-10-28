@@ -6,9 +6,9 @@ Plataforma para que comercios locales tengan su sitio web: menú digital para re
 para tiendas de ropa y negocios de artículos, y pedidos por WhatsApp. Una sola aplicación atiende a
 todos los comercios (multi-tenant); cada cliente nuevo se da de alta por configuración.
 
-> Estado: **Etapa 3**. Funcionan el sitio público del restaurante (con QR por mesa y pedido por
-> WhatsApp) y el panel del comercio con login. Los otros rubros, el panel de super-admin y el
-> despliegue llegan en las próximas etapas.
+> Estado: **Etapa 4**. Funcionan los sitios de los tres rubros (restaurante con QR por mesa; tienda de
+> ropa con talles y colores; venta de artículos con buscador y filtros), el pedido por WhatsApp y el
+> panel del comercio con login. El panel de super-admin y el despliegue llegan en las próximas etapas.
 
 ## Requisitos
 
@@ -44,6 +44,13 @@ dispositivo):
 - QR de mesa: http://sabores-del-valle.localhost:8080/?mesa=5 simula haber escaneado el QR de la mesa 5.
 - Imagen de vista previa al compartir el link: http://sabores-del-valle.localhost:8080/vista-previa.png
 
+En la tienda de ropa y el bazar:
+
+- Grilla de productos con buscador (sin importar tildes: "pava electrica") y filtros por categoría:
+  http://la-alameda.localhost:8080/?q=mate
+- Elegir talle y color antes de agregar; los talles agotados se ven pero no se pueden elegir. El mensaje
+  de WhatsApp incluye el talle: "2 x Remera básica de algodón (talle M, Negro)".
+
 ### Panel del comercio
 
 Entrá a http://app.localhost:8080/login con el usuario del comercio (tabla de arriba). Desde el panel
@@ -51,6 +58,8 @@ el dueño, sin conocimientos técnicos y desde el celular, puede:
 
 - Cargar, editar y borrar productos; marcarlos "sin stock" con un toque; subir hasta 5 fotos por
   producto (se achican solas para que el sitio cargue rápido).
+- En ropa: cargar talles y colores escribiendo "S, M, L" y "Negro, Blanco" (se crean todas las
+  combinaciones) y marcar sin stock un talle puntual.
 - Crear, ordenar y ocultar categorías.
 - Cargar los horarios de la semana (hasta dos turnos por día).
 - Editar los datos del comercio: WhatsApp, contacto, mapa, redes, colores, logo, portada y textos para
@@ -83,6 +92,8 @@ corriendo se marcan como omitidos (no fallan). Los más importantes:
   suspendido en solo lectura, contraseña temporal obligatoria de cambiar.
 - `ProductosDelPanelTest` / `ProcesadorImagenesTest`: alta y edición de productos, fotos optimizadas y
   rechazo de archivos que no son imágenes.
+- `SitioCatalogoTest` / `BuscadorCatalogoTest`: catálogo con talles, búsqueda sin tildes, filtros y
+  categorías ajenas ignoradas. `VariantesDelPanelTest`: talles y colores desde el panel y aislamiento.
 
 ## Configuración
 

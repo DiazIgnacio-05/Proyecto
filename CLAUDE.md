@@ -38,7 +38,9 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
 - `imagen/` subida de fotos: `ProcesadorImagenes` (valida y achica), `AlmacenamientoImagenes` (disco local).
 - `superadmin/` panel del super-admin (Etapa 5; hoy solo la portada).
 - `config/` propiedades tipadas (`vidriera.*`), seguridad, reloj.
-- `publico/` sitio público (menú del restaurante), SEO (`MetadatosPagina`) e imagen de vista previa.
+- `publico/` sitio público: `restaurante.html` (menú) o `catalogo.html` (grilla con buscador, filtros y
+  talles) según `rubro.usaBuscador()`; partes comunes en `fragments/sitio.html`. SEO (`MetadatosPagina`)
+  e imagen de vista previa.
 - `pedido/` pedido por WhatsApp: formulario, validación contra la base, mensaje y `NumeroWhatsApp`.
 - `qr/` generador de QR (SVG con ZXing); la hoja para imprimir está en el panel (`/admin/mesas`).
 - `comun/` utilidades compartidas (`FormatoPesos`, bean `@pesos` en Thymeleaf; `LectorPesos` para formularios).
@@ -89,6 +91,14 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
     Carpeta: `VIDRIERA_IMAGENES_DIR` (default `./uploads`); en producción será un volumen o R2.
 15. Formularios del panel: Post/Redirect/Get con mensajes flash (`ok` / `error`). Precios como texto
     interpretado por `LectorPesos` ("12.500", "1.250,50").
+16. **Variantes (ropa)**: cada `Variante` es una combinación talle/color con stock propio; el precio es
+    el del producto. El panel genera combinaciones desde listas ("S, M, L" × "Negro, Blanco"), sin
+    repetir (máx. 60 por producto). Un producto con variantes solo se puede pedir eligiendo una
+    disponible; en el carrito la clave es `productoId:varianteId` y el pedido manda `lineas[i].varianteId`.
+    El servidor valida que la variante sea de ese producto y tenga stock.
+17. **Buscador del catálogo**: GET `/?q=...&categoria=...` (funciona sin JS y el link se puede
+    compartir). Filtra en memoria con `BuscadorCatalogo`: todas las palabras, sin importar mayúsculas
+    ni tildes, en nombre, descripción o categoría. Una categoría que no es del comercio se ignora.
 
 ## Convenciones
 - Código y dominio en español, sin ñ ni tildes en identificadores (`DUENO`, `Categoria`). Sin Lombok.
@@ -120,11 +130,17 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
   el tenant). Para leer colecciones lazy, `PruebaDelPanel.enTransaccion(...)` fija el tenant y después
   abre la transacción.
 - `<fieldset>` tiene ancho mínimo = contenido: poner `min-width: 0` o se desborda en celular.
+- Si los tests dicen "Skipped" en los de integración, Docker Desktop no está corriendo (pasa tras reiniciar
+  la PC): iniciarlo y repetir. Un resultado con omitidos no cuenta como verificado.
+- `curl` desde Git Bash en Windows no manda UTF-8 en `-d`: para probar textos con tildes, usar el navegador
+  o los tests (Tomcat responde 400 a parámetros mal codificados).
+- Las tarjetas del catálogo llevan también la clase `.producto` (la usa `carrito.js`): sus estilos de fila
+  se anulan en `.tarjeta-producto`.
 
 ## Estado por etapas
 - [x] Etapa 1: estructura, modelo multi-tenant, datos demo, tests de aislamiento y horarios.
 - [x] Etapa 2: sitio público restaurante + QR + pedido por WhatsApp.
 - [x] Etapa 3: panel del comercio con autenticación.
-- [ ] Etapa 4: rubros ropa y artículos.
+- [x] Etapa 4: rubros ropa y artículos.
 - [ ] Etapa 5: panel super-admin (alta, baja, suspensión).
 - [ ] Etapa 6: despliegue y guía de alta de clientes.
