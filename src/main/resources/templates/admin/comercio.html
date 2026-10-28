@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Mi comercio')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <h1>Mi comercio</h1>
+
+    <form th:object="${form}" th:action="@{/admin/comercio}" method="post" class="formulario">
+        <div th:if="${#fields.hasErrors('*')}" class="aviso aviso--error" role="alert">
+            <p th:if="${#fields.hasGlobalErrors()}" th:each="e : ${#fields.globalErrors()}" th:text="${e}">Error</p>
+            <p th:unless="${#fields.hasGlobalErrors()}">Revisá los campos marcados.</p>
+        </div>
+
+        <fieldset class="bloque">
+            <legend>Datos básicos</legend>
+            <label class="campo">
+                <span>Nombre del comercio</span>
+                <input th:field="*{nombre}" maxlength="120" required>
+                <small class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></small>
+            </label>
+            <label class="campo">
+                <span>Descripción corta</span>
+                <textarea th:field="*{descripcion}" rows="2" maxlength="500"
+                          placeholder="Ej.: Cocina regional, empanadas al horno de barro"></textarea>
+                <small class="error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></small>
+            </label>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Contacto</legend>
+            <label class="campo">
+                <span>WhatsApp (acá llegan los pedidos)</span>
+                <input th:field="*{whatsapp}" inputmode="tel" placeholder="Ej.: 383 4123456" required>
+                <small class="ayuda">Con código de área, sin 0 ni 15 (igual los entendemos si los ponés).</small>
+                <small class="error" th:if="${#fields.hasErrors('whatsapp')}" th:errors="*{whatsapp}"></small>
+            </label>
+            <label class="campo">
+                <span>Teléfono fijo (opcional)</span>
+                <input th:field="*{telefono}" inputmode="tel">
+            </label>
+            <label class="campo">
+                <span>Email (opcional)</span>
+                <input type="email" th:field="*{email}">
+                <small class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></small>
+            </label>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Ubicación</legend>
+            <label class="campo">
+                <span>Dirección</span>
+                <input th:field="*{direccion}" maxlength="200" placeholder="Ej.: Av. Belgrano 1250, San Fernando del Valle de Catamarca">
+            </label>
+            <div class="fila-campos">
+                <label class="campo">
+                    <span>Latitud</span>
+                    <input th:field="*{latitud}" inputmode="decimal" placeholder="-28.468900">
+                    <small class="error" th:if="${#fields.hasErrors('latitud')}" th:errors="*{latitud}"></small>
+                </label>
+                <label class="campo">
+                    <span>Longitud</span>
+                    <input th:field="*{longitud}" inputmode="decimal" placeholder="-65.784200">
+                    <small class="error" th:if="${#fields.hasErrors('longitud')}" th:errors="*{longitud}"></small>
+                </label>
+            </div>
+            <small class="ayuda">Para el mapa: en Google Maps tocá y mantené sobre tu local; copiá los dos números
+                que aparecen (el primero es la latitud). Dejalos vacíos si no querés mostrar mapa.</small>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Redes sociales (opcional)</legend>
+            <label class="campo"><span>Instagram</span><input th:field="*{instagram}" placeholder="@tucomercio"></label>
+            <label class="campo"><span>Facebook</span><input th:field="*{facebook}" placeholder="tucomercio"></label>
+            <label class="campo"><span>TikTok</span><input th:field="*{tiktok}" placeholder="@tucomercio"></label>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Colores del sitio</legend>
+            <div class="fila-campos">
+                <label class="campo campo--color">
+                    <span>Principal</span>
+                    <input type="color" th:field="*{colorPrimario}">
+                </label>
+                <label class="campo campo--color">
+                    <span>Secundario</span>
+                    <input type="color" th:field="*{colorSecundario}">
+                </label>
+            </div>
+            <small class="ayuda">El color del texto se ajusta solo para que siempre se pueda leer.</small>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Cómo aparece en Google y al compartir</legend>
+            <label class="campo">
+                <span>Título</span>
+                <input th:field="*{seoTitulo}" maxlength="70" placeholder="Ej.: Sabores del Valle · Cocina catamarqueña">
+                <small class="error" th:if="${#fields.hasErrors('seoTitulo')}" th:errors="*{seoTitulo}"></small>
+            </label>
+            <label class="campo">
+                <span>Descripción</span>
+                <textarea th:field="*{seoDescripcion}" rows="2" maxlength="160"
+                          placeholder="Una frase que invite a entrar. Máximo 160 caracteres."></textarea>
+                <small class="error" th:if="${#fields.hasErrors('seoDescripcion')}" th:errors="*{seoDescripcion}"></small>
+            </label>
+        </fieldset>
+
+        <fieldset class="bloque">
+            <legend>Pedidos</legend>
+            <label class="opcion">
+                <input type="checkbox" th:field="*{ofreceEnvio}">
+                <span>Hago envíos a domicilio <small class="suave">(el cliente puede elegir envío al pedir)</small></span>
+            </label>
+            <label th:if="${comercio.rubro.usaMesas()}" class="campo campo--corto">
+                <span>Cantidad de mesas</span>
+                <input type="number" th:field="*{cantidadMesas}" min="0" max="200">
+                <small class="ayuda">Se genera un QR por mesa en "QR de mesas".</small>
+                <small class="error" th:if="${#fields.hasErrors('cantidadMesas')}" th:errors="*{cantidadMesas}"></small>
+            </label>
+        </fieldset>
+
+        <button type="submit" class="boton boton--principal">Guardar cambios</button>
+    </form>
+
+    <section id="imagenes" class="bloque">
+        <h2>Logo y portada</h2>
+        <div class="imagenes-comercio">
+            <div class="imagen-comercio">
+                <h3>Logo</h3>
+                <img th:if="${comercio.apariencia.logoUrl}" th:src="${comercio.apariencia.logoUrl}" alt="Logo actual"
+                     class="logo-actual" width="96" height="96">
+                <p th:unless="${comercio.apariencia.logoUrl}" class="suave">Sin logo (se muestra la inicial).</p>
+                <form method="post" enctype="multipart/form-data" th:action="@{/admin/comercio/logo}" class="formulario">
+                    <input type="file" name="archivo" accept="image/jpeg,image/png" required>
+                    <button type="submit" class="boton boton--secundario">Subir logo</button>
+                </form>
+                <form th:if="${comercio.apariencia.logoUrl}" method="post" th:action="@{/admin/comercio/logo/eliminar}">
+                    <button type="submit" class="boton boton--chico boton--peligro">Quitar logo</button>
+                </form>
+            </div>
+            <div class="imagen-comercio">
+                <h3>Portada</h3>
+                <img th:if="${comercio.apariencia.portadaUrl}" th:src="${comercio.apariencia.portadaUrl}" alt="Portada actual"
+                     class="portada-actual" width="320" height="168">
+                <p th:unless="${comercio.apariencia.portadaUrl}" class="suave">
+                    Sin portada. Es la imagen grande del sitio y la que se ve al compartir el link por WhatsApp.
+                </p>
+                <form method="post" enctype="multipart/form-data" th:action="@{/admin/comercio/portada}" class="formulario">
+                    <input type="file" name="archivo" accept="image/jpeg,image/png" required>
+                    <button type="submit" class="boton boton--secundario">Subir portada</button>
+                </form>
+                <form th:if="${comercio.apariencia.portadaUrl}" method="post" th:action="@{/admin/comercio/portada/eliminar}">
+                    <button type="submit" class="boton boton--chico boton--peligro">Quitar portada</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

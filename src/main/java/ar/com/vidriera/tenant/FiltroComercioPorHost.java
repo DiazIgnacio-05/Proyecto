@@ -35,6 +35,7 @@ public class FiltroComercioPorHost extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String ruta = request.getRequestURI();
         return ruta.startsWith("/css/") || ruta.startsWith("/js/") || ruta.startsWith("/img/")
+                || ruta.startsWith("/imagenes/")
                 || ruta.equals("/favicon.ico");
     }
 
@@ -45,6 +46,13 @@ public class FiltroComercioPorHost extends OncePerRequestFilter {
         DestinoHost destino = resolutor.resolver(request.getServerName());
         if (destino instanceof DestinoHost.Plataforma) {
             cadena.doFilter(request, response);
+            return;
+        }
+
+        // Los paneles y el login viven solo en el host de la plataforma (app.<dominio>): en el
+        // subdominio de un comercio no existen. Así el comercio del panel sale siempre del usuario.
+        if (esRutaDePanel(request.getRequestURI())) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
 
@@ -65,5 +73,11 @@ public class FiltroComercioPorHost extends OncePerRequestFilter {
         } finally {
             TenantContext.limpiar();
         }
+    }
+
+    static boolean esRutaDePanel(String ruta) {
+        return ruta.equals("/admin") || ruta.startsWith("/admin/")
+                || ruta.equals("/superadmin") || ruta.startsWith("/superadmin/")
+                || ruta.equals("/login") || ruta.equals("/logout");
     }
 }

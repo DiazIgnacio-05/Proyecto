@@ -6,8 +6,9 @@ Plataforma para que comercios locales tengan su sitio web: menú digital para re
 para tiendas de ropa y negocios de artículos, y pedidos por WhatsApp. Una sola aplicación atiende a
 todos los comercios (multi-tenant); cada cliente nuevo se da de alta por configuración.
 
-> Estado: **Etapa 2**. Ya funciona el sitio público del restaurante con QR por mesa y pedido por
-> WhatsApp. Los otros rubros, los paneles y el despliegue llegan en las próximas etapas.
+> Estado: **Etapa 3**. Funcionan el sitio público del restaurante (con QR por mesa y pedido por
+> WhatsApp) y el panel del comercio con login. Los otros rubros, el panel de super-admin y el
+> despliegue llegan en las próximas etapas.
 
 ## Requisitos
 
@@ -41,8 +42,20 @@ dispositivo):
 - Menú por categorías, cartel "Abierto ahora / Cerrado", horarios, mapa y contacto.
 - Armar un pedido y enviarlo: se abre WhatsApp con el mensaje escrito (productos, cantidades y total).
 - QR de mesa: http://sabores-del-valle.localhost:8080/?mesa=5 simula haber escaneado el QR de la mesa 5.
-- Hoja de QR para imprimir: http://sabores-del-valle.localhost:8080/mesas/imprimir
 - Imagen de vista previa al compartir el link: http://sabores-del-valle.localhost:8080/vista-previa.png
+
+### Panel del comercio
+
+Entrá a http://app.localhost:8080/login con el usuario del comercio (tabla de arriba). Desde el panel
+el dueño, sin conocimientos técnicos y desde el celular, puede:
+
+- Cargar, editar y borrar productos; marcarlos "sin stock" con un toque; subir hasta 5 fotos por
+  producto (se achican solas para que el sitio cargue rápido).
+- Crear, ordenar y ocultar categorías.
+- Cargar los horarios de la semana (hasta dos turnos por día).
+- Editar los datos del comercio: WhatsApp, contacto, mapa, redes, colores, logo, portada y textos para
+  Google; activar envíos a domicilio y la cantidad de mesas.
+- Imprimir los QR de las mesas y cambiar su contraseña.
 
 La contraseña de los usuarios demo es `demo1234`. El super-admin se crea al primer arranque con
 `SUPERADMIN_EMAIL` y `SUPERADMIN_PASSWORD` del `.env`. Los números de WhatsApp de la demo son
@@ -64,6 +77,12 @@ corriendo se marcan como omitidos (no fallan). Los más importantes:
   comercio, mesas inexistentes y envíos en comercios que no los hacen.
 - `NumeroWhatsAppTest`: normaliza "0383 15 4000001", "+54 9 383..." y otras formas al formato de WhatsApp.
 - `SitioRestauranteTest`: menú, SEO, QR por mesa y vista previa de punta a punta.
+- `AislamientoDelPanelTest`: el dueño de un comercio no puede ver, editar ni borrar datos de otro
+  aunque pruebe con sus ids.
+- `SeguridadDelPanelTest`: login, bloqueo tras 5 intentos, CSRF, panel solo en `app.`, comercio
+  suspendido en solo lectura, contraseña temporal obligatoria de cambiar.
+- `ProductosDelPanelTest` / `ProcesadorImagenesTest`: alta y edición de productos, fotos optimizadas y
+  rechazo de archivos que no son imágenes.
 
 ## Configuración
 
@@ -75,6 +94,7 @@ variables de entorno; el archivo `.env` nunca se sube al repositorio.
 | `DB_URL`, `DB_USER`, `DB_PASSWORD` | Conexión a PostgreSQL |
 | `VIDRIERA_DOMINIO_BASE` | Dominio de los subdominios (`localhost` en desarrollo) |
 | `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD` | Super-admin inicial (contraseña de 12+ caracteres) |
+| `VIDRIERA_IMAGENES_DIR` | Carpeta donde se guardan las fotos subidas (por defecto `./uploads`) |
 
 ## Estructura
 
@@ -83,7 +103,10 @@ src/main/java/ar/com/vidriera/
   tenant/     aislamiento multi-tenant y resolución del comercio por subdominio
   comercio/   comercio (cliente), rubros, estados, módulos y horarios
   catalogo/   categorías, productos, variantes e imágenes
-  usuario/    usuarios, roles y login
+  usuario/    usuarios, roles, login y contraseñas
+  admin/      panel del comercio
+  superadmin/ panel del super-admin
+  imagen/     subida, optimización y almacenamiento de fotos
   config/     configuración y seguridad
   publico/    sitio público, SEO e imagen de vista previa
   pedido/     pedido por WhatsApp

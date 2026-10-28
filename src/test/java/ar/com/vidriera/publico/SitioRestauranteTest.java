@@ -72,21 +72,9 @@ class SitioRestauranteTest extends PruebaDeIntegracion {
     }
 
     @Test
-    void cadaMesaTieneSuQrYLaHojaParaImprimir() throws Exception {
-        mvc.perform(get("/mesas/12/qr.svg").header("Host", SABORES))
-                .andExpect(status().isOk())
-                .andExpect(header().string("Content-Type", containsString("image/svg+xml")))
-                .andExpect(content().string(containsString("<svg")));
-        mvc.perform(get("/mesas/13/qr.svg").header("Host", SABORES)).andExpect(status().isNotFound());
-        mvc.perform(get("/mesas/imprimir").header("Host", SABORES))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Mesa 12")));
-    }
-
-    @Test
-    void losComerciosSinMesasNoTienenQr() throws Exception {
-        mvc.perform(get("/mesas/1/qr.svg").header("Host", "nogal.localhost")).andExpect(status().isNotFound());
-        mvc.perform(get("/mesas/imprimir").header("Host", "nogal.localhost")).andExpect(status().isNotFound());
+    void losQrDeMesaYaNoSonPublicosEstanEnElPanel() throws Exception {
+        mvc.perform(get("/mesas/12/qr.svg").header("Host", SABORES)).andExpect(status().isNotFound());
+        mvc.perform(get("/mesas/imprimir").header("Host", SABORES)).andExpect(status().isNotFound());
     }
 
     @Test

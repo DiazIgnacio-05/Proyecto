@@ -3,6 +3,8 @@
 <head th:replace="~{fragments/head :: head(${meta}, ${comercio})}"></head>
 <body th:data-carrito="${comercio.slug}">
 
+<img th:if="${comercio.apariencia.portadaUrl}" th:src="${comercio.apariencia.portadaUrl}" alt=""
+     class="imagen-portada" width="1200" height="400" fetchpriority="high">
 <header class="portada">
     <div class="contenedor">
         <div class="marca">
@@ -41,6 +43,8 @@
             <li th:each="p : ${seccion.productos}" class="producto"
                 th:classappend="${!p.sePuedePedir} ? 'producto--agotado'"
                 th:attr="data-id=${p.id},data-nombre=${p.nombre},data-precio=${p.precio},data-pedible=${p.sePuedePedir}">
+                <img th:if="${p.imagenUrl}" th:src="${p.imagenUrl}" alt="" class="producto__foto"
+                     width="88" height="88" loading="lazy" decoding="async">
                 <div class="producto__info">
                     <h3 class="producto__nombre">
                         <span th:text="${p.nombre}">Producto</span>

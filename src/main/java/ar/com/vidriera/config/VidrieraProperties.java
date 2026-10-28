@@ -12,10 +12,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *                    ({@code localhost} en desarrollo, {@code vidriera.com.ar} en producción)
  * @param zonaHoraria zona horaria de los comercios (para "abierto ahora")
  * @param superAdmin  credenciales iniciales del super-admin
+ * @param imagenes    dónde se guardan las fotos subidas
  */
 @ConfigurationProperties(prefix = "vidriera")
-public record VidrieraProperties(String dominioBase, ZoneId zonaHoraria, SuperAdmin superAdmin) {
+public record VidrieraProperties(String dominioBase, ZoneId zonaHoraria, SuperAdmin superAdmin,
+        Imagenes imagenes) {
 
     public record SuperAdmin(String email, String password) {
+    }
+
+    /** @param directorio carpeta del disco donde se guardan las imágenes (en producción, un volumen) */
+    public record Imagenes(String directorio) {
     }
 }

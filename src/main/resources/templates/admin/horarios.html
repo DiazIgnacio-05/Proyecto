@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Horarios')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <h1>Horarios de atención</h1>
+    <p class="suave">
+        Hasta dos turnos por día (por ejemplo mañana y tarde). Dejá un día vacío si está cerrado.
+        Si cerrás después de medianoche, poné la hora real de cierre (ej. de 20:30 a 00:30).
+    </p>
+
+    <form th:object="${form}" th:action="@{/admin/horarios}" method="post" class="formulario">
+        <div th:if="${#fields.hasGlobalErrors()}" class="aviso aviso--error" role="alert">
+            <p th:each="e : ${#fields.globalErrors()}" th:text="${e}">Error</p>
+        </div>
+
+        <fieldset th:each="dia, i : *{dias}" class="dia">
+            <legend th:text="${dia.nombre}">Lunes</legend>
+            <input type="hidden" th:field="*{dias[__${i.index}__].dia}">
+            <div class="turnos">
+                <div class="turno">
+                    <input type="time" th:field="*{dias[__${i.index}__].apertura1}" aria-label="Apertura turno 1">
+                    <span>a</span>
+                    <input type="time" th:field="*{dias[__${i.index}__].cierre1}" aria-label="Cierre turno 1">
+                </div>
+                <div class="turno">
+                    <input type="time" th:field="*{dias[__${i.index}__].apertura2}" aria-label="Apertura turno 2">
+                    <span>a</span>
+                    <input type="time" th:field="*{dias[__${i.index}__].cierre2}" aria-label="Cierre turno 2">
+                </div>
+            </div>
+        </fieldset>
+
+        <button type="submit" class="boton boton--principal">Guardar horarios</button>
+    </form>
+</main>
+</body>
+</html>

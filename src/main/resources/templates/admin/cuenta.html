@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Mi cuenta')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <h1>Mi cuenta</h1>
+    <p class="suave">Entrás con <strong th:text="${usuario.username}">email</strong>.</p>
+
+    <div th:if="${usuario.debeCambiarPassword}" class="aviso aviso--alerta" role="alert">
+        Estás usando una contraseña temporal. Elegí una propia para seguir.
+    </div>
+
+    <form th:action="@{/admin/cuenta/password}" method="post" class="formulario bloque">
+        <h2>Cambiar contraseña</h2>
+        <label class="campo">
+            <span>Contraseña actual</span>
+            <input type="password" name="actual" autocomplete="current-password" required>
+        </label>
+        <label class="campo">
+            <span>Contraseña nueva</span>
+            <input type="password" name="nueva" autocomplete="new-password" th:minlength="${largoMinimo}" required>
+            <small class="ayuda" th:text="|Al menos ${largoMinimo} caracteres. Una frase corta es fácil de recordar y difícil de adivinar.|"></small>
+        </label>
+        <label class="campo">
+            <span>Repetí la contraseña nueva</span>
+            <input type="password" name="repetida" autocomplete="new-password" th:minlength="${largoMinimo}" required>
+        </label>
+        <button type="submit" class="boton boton--principal">Cambiar contraseña</button>
+    </form>
+</main>
+</body>
+</html>

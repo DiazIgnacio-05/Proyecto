@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragmentos :: head('Categorías')}"></head>
+<body>
+<header th:replace="~{admin/fragmentos :: menu}"></header>
+<main class="contenido">
+    <th:block th:replace="~{admin/fragmentos :: mensajes}"></th:block>
+    <h1>Categorías</h1>
+    <p class="suave">Agrupan tus productos en el sitio (por ejemplo "Empanadas", "Bebidas"). Las ocultas no se muestran.</p>
+
+    <form th:action="@{/admin/categorias}" method="post" class="formulario formulario--linea bloque">
+        <label class="campo">
+            <span>Nueva categoría</span>
+            <input name="nombre" maxlength="80" placeholder="Ej.: Postres" required>
+        </label>
+        <button type="submit" class="boton boton--principal">Agregar</button>
+    </form>
+
+    <ul class="lista-categorias">
+        <li th:each="c : ${categorias}" class="bloque">
+            <form th:action="@{/admin/categorias/{id}(id=${c.id})}" method="post" class="formulario formulario--linea">
+                <label class="campo">
+                    <span>Nombre</span>
+                    <input name="nombre" th:value="${c.nombre}" maxlength="80" required>
+                </label>
+                <label class="campo campo--corto">
+                    <span>Orden</span>
+                    <input type="number" name="orden" th:value="${c.orden}" min="0" max="9999">
+                </label>
+                <label class="opcion">
+                    <input type="checkbox" name="activa" value="true" th:checked="${c.activa}">
+                    <span>Visible</span>
+                </label>
+                <button type="submit" class="boton boton--secundario">Guardar</button>
+            </form>
+            <div class="fila-secundaria">
+                <span class="suave" th:text="|${c.productos} producto${c.productos == 1 ? '' : 's'}|">0 productos</span>
+                <form th:if="${c.productos == 0}" th:action="@{/admin/categorias/{id}/eliminar(id=${c.id})}"
+                      method="post" onsubmit="return confirm('¿Eliminar esta categoría?')">
+                    <button type="submit" class="boton boton--chico boton--peligro">Eliminar</button>
+                </form>
+            </div>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

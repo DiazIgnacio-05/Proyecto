@@ -13,4 +13,12 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     /** Trae las variantes en la misma consulta ("fetch join") para poder usarlas fuera de la transacción. */
     @Query("select distinct p from Producto p left join fetch p.variantes order by p.orden, p.nombre")
     List<Producto> findAllConVariantes();
+
+    boolean existsByCategoriaId(Long categoriaId);
+
+    /** Cantidad de productos por categoría: filas {@code [categoriaId, cantidad]}. */
+    @Query("select p.categoria.id, count(p) from Producto p group by p.categoria.id")
+    List<Object[]> contarPorCategoria();
+
+    long countByDisponibleFalse();
 }
