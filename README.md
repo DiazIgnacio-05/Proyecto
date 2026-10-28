@@ -6,9 +6,10 @@ Plataforma para que comercios locales tengan su sitio web: menú digital para re
 para tiendas de ropa y negocios de artículos, y pedidos por WhatsApp. Una sola aplicación atiende a
 todos los comercios (multi-tenant); cada cliente nuevo se da de alta por configuración.
 
-> Estado: **Etapa 4**. Funcionan los sitios de los tres rubros (restaurante con QR por mesa; tienda de
-> ropa con talles y colores; venta de artículos con buscador y filtros), el pedido por WhatsApp y el
-> panel del comercio con login. El panel de super-admin y el despliegue llegan en las próximas etapas.
+> Estado: **Etapa 5**. Funcionan los sitios de los tres rubros (restaurante con QR por mesa; tienda de
+> ropa con talles y colores; venta de artículos con buscador y filtros), el pedido por WhatsApp, el
+> panel del comercio y el panel de super-admin (alta, suspensión, baja y abonos). El despliegue en
+> producción llega en la Etapa 6.
 
 ## Requisitos
 
@@ -94,6 +95,8 @@ corriendo se marcan como omitidos (no fallan). Los más importantes:
   rechazo de archivos que no son imágenes.
 - `SitioCatalogoTest` / `BuscadorCatalogoTest`: catálogo con talles, búsqueda sin tildes, filtros y
   categorías ajenas ignoradas. `VariantesDelPanelTest`: talles y colores desde el panel y aislamiento.
+- `SuperAdminTest`: alta con contraseña temporal (y login con ella), suspensión, pago, baja, reseteo de
+  clave, dominio propio y que un dueño no pueda entrar al super-admin. `EstadoAbonoTest`: vencimientos.
 
 ## Configuración
 
@@ -133,7 +136,20 @@ Las decisiones de arquitectura están en [CLAUDE.md](CLAUDE.md).
 
 ## Alta de un cliente nuevo
 
-Se hará desde el panel de super-admin (Etapa 5). La guía completa llega en la Etapa 6.
+Desde el panel de super-admin (http://app.localhost:8080/login con `SUPERADMIN_EMAIL` /
+`SUPERADMIN_PASSWORD` del `.env`):
+
+1. **+ Nuevo comercio**: nombre, subdominio (se sugiere solo a partir del nombre), rubro, WhatsApp,
+   nombre y email del dueño, y hasta cuándo está pago el abono.
+2. Al crear, se muestran **una sola vez** los datos para el dueño (dirección del panel, email y
+   contraseña temporal) con un botón para mandárselos por WhatsApp. El sitio ya queda publicado con las
+   categorías típicas del rubro.
+3. El dueño entra, elige su contraseña y carga productos, fotos y horarios.
+
+En la ficha de cada comercio podés registrar pagos (suma un mes y reactiva si estaba suspendido),
+suspender por falta de pago, dar de baja, activar módulos pagos (por ejemplo dominio propio), dejar
+notas internas y generar una contraseña nueva si el dueño la olvidó. El listado avisa qué comercios
+tienen el abono vencido. La guía de producción llega en la Etapa 6.
 
 ## Despliegue
 
