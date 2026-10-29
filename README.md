@@ -6,10 +6,10 @@ Plataforma para que comercios locales tengan su sitio web: menú digital para re
 para tiendas de ropa y negocios de artículos, y pedidos por WhatsApp. Una sola aplicación atiende a
 todos los comercios (multi-tenant); cada cliente nuevo se da de alta por configuración.
 
-> Estado: **Etapa 5**. Funcionan los sitios de los tres rubros (restaurante con QR por mesa; tienda de
-> ropa con talles y colores; venta de artículos con buscador y filtros), el pedido por WhatsApp, el
-> panel del comercio y el panel de super-admin (alta, suspensión, baja y abonos). El despliegue en
-> producción llega en la Etapa 6.
+> Estado: **Etapa 6 (MVP completo)**. Funcionan los sitios de los tres rubros (restaurante con QR por
+> mesa; tienda de ropa con talles y colores; venta de artículos con buscador y filtros), el pedido por
+> WhatsApp, el panel del comercio, el panel de super-admin (alta, suspensión, baja y abonos) y el
+> despliegue en producción con HTTPS y backups ([guía](docs/despliegue.md)).
 
 ## Requisitos
 
@@ -97,11 +97,15 @@ corriendo se marcan como omitidos (no fallan). Los más importantes:
   categorías ajenas ignoradas. `VariantesDelPanelTest`: talles y colores desde el panel y aislamiento.
 - `SuperAdminTest`: alta con contraseña temporal (y login con ella), suspensión, pago, baja, reseteo de
   clave, dominio propio y que un dueño no pueda entrar al super-admin. `EstadoAbonoTest`: vencimientos.
+- `DominiosPermitidosTest`: el servidor solo pide certificados HTTPS para dominios propios dados de alta.
+
+La CI además construye la imagen de Docker y valida el Compose y el Caddyfile de producción.
 
 ## Configuración
 
-Todas las claves están documentadas en [.env.example](.env.example). En producción se pasan como
-variables de entorno; el archivo `.env` nunca se sube al repositorio.
+Todas las claves están documentadas en [.env.example](.env.example) (desarrollo) y
+[deploy/.env.example](deploy/.env.example) (producción). Los archivos `.env` nunca se suben al
+repositorio.
 
 | Variable | Para qué |
 |---|---|
@@ -109,6 +113,8 @@ variables de entorno; el archivo `.env` nunca se sube al repositorio.
 | `VIDRIERA_DOMINIO_BASE` | Dominio de los subdominios (`localhost` en desarrollo) |
 | `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD` | Super-admin inicial (contraseña de 12+ caracteres) |
 | `VIDRIERA_IMAGENES_DIR` | Carpeta donde se guardan las fotos subidas (por defecto `./uploads`) |
+| `ACME_EMAIL` | Solo producción: email para los certificados de Let's Encrypt (dominios propios) |
+| `BACKUP_DIR`, `RCLONE_DESTINO` | Solo producción: carpeta de backups y copia en Cloudflare R2 |
 
 ## Estructura
 
@@ -130,30 +136,50 @@ src/main/resources/
   db/migration/   migraciones Flyway (esquema)
   db/demo/        comercios de demostración (perfiles dev y test)
   templates/      vistas Thymeleaf
+Dockerfile        imagen de producción
+deploy/           Compose de producción, Caddyfile, backup y restauración
+docs/             guía de despliegue y módulos futuros
 ```
 
 Las decisiones de arquitectura están en [CLAUDE.md](CLAUDE.md).
 
 ## Alta de un cliente nuevo
 
-Desde el panel de super-admin (http://app.localhost:8080/login con `SUPERADMIN_EMAIL` /
-`SUPERADMIN_PASSWORD` del `.env`):
+No hace falta tocar código, el servidor ni el DNS. Desde el panel de super-admin
+(`https://app.<tu-dominio>/login`; en desarrollo http://app.localhost:8080/login, con
+`SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD` del `.env`):
 
 1. **+ Nuevo comercio**: nombre, subdominio (se sugiere solo a partir del nombre), rubro, WhatsApp,
    nombre y email del dueño, y hasta cuándo está pago el abono.
 2. Al crear, se muestran **una sola vez** los datos para el dueño (dirección del panel, email y
-   contraseña temporal) con un botón para mandárselos por WhatsApp. El sitio ya queda publicado con las
-   categorías típicas del rubro.
-3. El dueño entra, elige su contraseña y carga productos, fotos y horarios.
+   contraseña temporal) con un botón para mandárselos por WhatsApp. El sitio ya queda publicado en
+   `https://<subdominio>.<tu-dominio>` con las categorías típicas del rubro.
+3. El dueño entra, elige su contraseña y carga productos, fotos, horarios, logo y colores (o lo hacés
+   vos como parte del servicio).
+4. Desde "QR de mesas" imprime la hoja de QR (restaurantes) y comparte el link del sitio en sus redes.
 
-En la ficha de cada comercio podés registrar pagos (suma un mes y reactiva si estaba suspendido),
-suspender por falta de pago, dar de baja, activar módulos pagos (por ejemplo dominio propio), dejar
-notas internas y generar una contraseña nueva si el dueño la olvidó. El listado avisa qué comercios
-tienen el abono vencido. La guía de producción llega en la Etapa 6.
+Cada mes, en la ficha del comercio: **Registrar pago** suma un mes (y reactiva si estaba suspendido).
+El listado avisa qué abonos están vencidos o por vencer; si no paga, **Suspender** muestra "sitio no
+disponible" y deja el panel en solo lectura, sin perder nada. **Dar de baja** lo quita del todo,
+conservando los datos. También podés activar módulos pagos (el dominio propio se configura como
+indica la [guía de despliegue](docs/despliegue.md#8-dominio-propio-de-un-cliente-módulo-pago)), dejar
+notas internas y generar una contraseña nueva si el dueño la olvidó.
 
 ## Despliegue
 
-Guía en la Etapa 6 (Docker Compose + Caddy en un VPS, con Cloudflare delante).
+Un VPS chico (Ubuntu, 2 GB de RAM) con Docker Compose: PostgreSQL + la app + Caddy (HTTPS), con
+Cloudflare delante y backups diarios a Cloudflare R2. Paso a paso, con dominio, DNS, certificados,
+backups, actualizaciones y dominios propios de clientes: **[docs/despliegue.md](docs/despliegue.md)**.
+
+```bash
+cd deploy && cp .env.example .env    # completar
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+## Módulos futuros
+
+Lista priorizada de funciones para cobrar aparte (estadísticas, promociones, pedidos registrados,
+Mercado Pago, reservas...) en **[docs/modulos-futuros.md](docs/modulos-futuros.md)**.
 
 ## Problemas comunes
 
@@ -165,3 +191,15 @@ intercepta las conexiones y Java no confía en su certificado. Creá el archivo 
 ```
 
 Así Maven usa los certificados de Windows. El archivo está en `.gitignore` porque es propio de cada PC.
+
+**`docker build` falla con "wget: Failed to fetch ... apache-maven".** Es el mismo antivirus: dentro de
+Docker no se puede usar el truco de arriba. En esa PC, desactivá el análisis HTTPS del antivirus
+mientras construís, o compilá el `.jar` con `./mvnw -DskipTests package` y construí solo la etapa
+final:
+
+```bash
+mkdir -p /tmp/ctx/src && cp target/vidriera-*.jar /tmp/ctx/src/app.jar
+docker buildx build --load -t vidriera-app --build-context compilacion=/tmp/ctx .
+```
+
+En el VPS y en GitHub Actions no pasa.

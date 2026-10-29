@@ -1,0 +1,13 @@
+# Lo que NO se manda a Docker al construir la imagen (más rápido y sin secretos adentro).
+.git
+.github
+.claude
+.idea
+.vscode
+target
+uploads
+deploy
+.env
+**/.env
+.mvn/jvm.config
+*.md

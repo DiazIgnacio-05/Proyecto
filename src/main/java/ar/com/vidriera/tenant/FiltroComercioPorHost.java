@@ -36,7 +36,9 @@ public class FiltroComercioPorHost extends OncePerRequestFilter {
         String ruta = request.getRequestURI();
         return ruta.startsWith("/css/") || ruta.startsWith("/js/") || ruta.startsWith("/img/")
                 || ruta.startsWith("/imagenes/")
-                || ruta.equals("/favicon.ico");
+                || ruta.equals("/favicon.ico")
+                // Llega con el host interno de Docker (app:8080), que no es de ningún comercio.
+                || ruta.equals(DominiosPermitidosController.RUTA);
     }
 
     @Override

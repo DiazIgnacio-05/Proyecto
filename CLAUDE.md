@@ -13,7 +13,8 @@ herramienta, patrón o framework nuevo. Si algo es ambiguo, preguntar antes de s
 - Java 21 (el JDK local es 22), Spring Boot 4.1 (Web MVC, Security, Data JPA, Validation), Hibernate 7.
 - Thymeleaf (render en servidor) + CSS propio con variables + JS vanilla mínimo. Sin build de Node.
 - PostgreSQL 17 + Flyway. Tests: JUnit 5, AssertJ, Spring Boot Test, Testcontainers.
-- Producción (Etapa 6): Docker Compose + Caddy en un VPS, Cloudflare delante, imágenes en Cloudflare R2.
+- Producción: Docker Compose (PostgreSQL + app + Caddy) en un VPS, Cloudflare delante, fotos en un
+  volumen del VPS, backups diarios con copia en Cloudflare R2 (rclone). Guía: `docs/despliegue.md`.
 
 ## Comandos
 ```bash
@@ -22,7 +23,9 @@ docker compose up -d                 # PostgreSQL local (lee .env)
 ./mvnw test                          # unitarios + integración (los de integración requieren Docker)
 ./mvnw -Dtest=AislamientoMultiTenantTest test   # un test puntual
 ```
-CI: `.github/workflows/tests.yml` corre `./mvnw -B test` en GitHub Actions en cada push y PR.
+Producción (en el VPS, desde `deploy/` con `deploy/.env`): `docker compose -f docker-compose.prod.yml up -d --build`.
+CI: `.github/workflows/tests.yml` corre `./mvnw -B test` en GitHub Actions en cada push y PR, y otro job
+construye la imagen de Docker y valida el Compose y el Caddyfile de producción.
 `mvnw` debe quedar con permiso de ejecución en git (`git update-index --chmod=+x mvnw`).
 
 Sitios demo: http://sabores-del-valle.localhost:8080 · http://nogal.localhost:8080 · http://la-alameda.localhost:8080
@@ -47,6 +50,8 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
 - `comun/` utilidades compartidas (`FormatoPesos`, bean `@pesos` en Thymeleaf; `LectorPesos` para formularios).
 - Vistas en `templates/` (`fragments/head.html` = SEO + colores del comercio); estáticos en `static/css`, `static/js`.
 - Migraciones en `src/main/resources/db/migration`; datos demo en `db/demo/R__datos_demo.sql` (solo perfiles dev/test).
+- `Dockerfile` (raíz); `deploy/` (Compose de producción, `Caddyfile`, `.env.example`, `backup.sh`,
+  `restaurar.sh`); `docs/` (guía de despliegue y módulos futuros). Perfil `prod` en `application-prod.yml`.
 
 ## Decisiones de arquitectura
 1. **Multi-tenant por columna** (`comercio_id` en cada tabla del comercio, base y esquema compartidos).
@@ -111,6 +116,20 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
       venció) y reactiva si estaba suspendido.
     - Contar productos de todos los comercios usa `ejecutarComoSistema` + transacción NUEVA
       (REQUIRES_NEW): dentro de una transacción ya abierta el modo sistema no tendría efecto.
+19. **Producción** (Etapa 6): Cloudflare (DNS con registro `*` proxied, SSL Full strict) → Caddy →
+    app → PostgreSQL. Solo Caddy publica puertos. Caddy usa el certificado de origen de Cloudflare
+    para `<dominio>` y `*.<dominio>`; los dominios propios de clientes van sin Cloudflare (CNAME a
+    `clientes.<dominio>`, DNS only) y Caddy les saca certificado de Let's Encrypt "on demand",
+    preguntando antes a `GET /interno/dominio-permitido?domain=` (`DominiosPermitidosController`:
+    200 solo si el dominio es de un comercio no dado de baja con el módulo DOMINIO_PROPIO). Esa ruta
+    no pasa por `FiltroComercioPorHost` (llega con host `app:8080`) y Caddy la bloquea desde afuera.
+    - Perfil `prod`: `forward-headers-strategy: native` (Tomcat acepta X-Forwarded-* solo de IPs
+      internas → `request.getScheme()` = https), cookie de sesión `Secure`, sin datos demo, y
+      `VIDRIERA_DOMINIO_BASE`/`DB_*` obligatorias.
+    - Imagen: JRE 21 + `fonts-dejavu-core` (vista previa) + curl (healthcheck con `Host: app.<dominio>`);
+      corre como usuario sin privilegios (uid 10001); fotos en el volumen `/datos/imagenes`.
+    - Backups (`deploy/backup.sh`, cron 4:15): `pg_dump -Fc` + tar de las fotos, 14/7 días locales,
+      copia en R2 con rclone (60 días). `restaurar.sh` probado de punta a punta.
 
 ## Convenciones
 - Código y dominio en español, sin ñ ni tildes en identificadores (`DUENO`, `Categoria`). Sin Lombok.
@@ -151,6 +170,13 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
 - Thymeleaf 3.1 bloquea `T(clase)` en las vistas: pasar listas de enums desde el controlador.
 - Claude no puede leer contraseñas de `.env` (bloqueado a propósito): para probar el super-admin en el
   navegador, que Ignacio inicie sesión; la cobertura automática está en `SuperAdminTest`.
+- `docker build` en esta PC falla al bajar Maven (Avast intercepta HTTPS también dentro de Docker).
+  Para probar la imagen: `./mvnw -DskipTests package` y `docker buildx build --build-context
+  compilacion=<carpeta con src/app.jar> .` (reemplaza la etapa de compilación). La CI sí la compila entera.
+- Para probar el stack de producción en local: copia de `deploy/` en el scratchpad, `.env` con valores de
+  prueba, certificado autofirmado para `vidriera.test`, `docker compose -p vidriera-prueba ...` y
+  `curl -k --resolve app.vidriera.test:443:127.0.0.1`. En Git Bash, `MSYS_NO_PATHCONV=1` para que no
+  convierta rutas como `/datos/imagenes` en rutas de Windows.
 
 ## Estado por etapas
 - [x] Etapa 1: estructura, modelo multi-tenant, datos demo, tests de aislamiento y horarios.
@@ -158,4 +184,4 @@ Panel: http://app.localhost:8080/login (dueños demo `sabores@`, `nogal@`, `alam
 - [x] Etapa 3: panel del comercio con autenticación.
 - [x] Etapa 4: rubros ropa y artículos.
 - [x] Etapa 5: panel super-admin (alta, baja, suspensión).
-- [ ] Etapa 6: despliegue y guía de alta de clientes.
+- [x] Etapa 6: despliegue (Docker, Caddy, Cloudflare, backups) y guías; módulos futuros en `docs/modulos-futuros.md`.
